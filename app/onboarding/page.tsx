@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { usePlanConfig } from '@/lib/hooks/usePlanConfig';
+import { useAuth } from '@/components/AuthProvider';
+import { createNewActivePlanForUser } from '@/lib/firestore/focusPlans';
+import { LoadingSpinner } from '@/components/ui';
 
 const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const DEFAULT_TRAINING_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
@@ -24,7 +26,7 @@ interface ValidationErrors {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { savePlanConfig } = usePlanConfig();
+  const { user, loading: authLoading, isVerified } = useAuth();
 
   const [targetDailyMinutes, setTargetDailyMinutes] = useState(180);
   const [configMode, setConfigMode] = useState<ConfigMode>('endDate');
@@ -36,6 +38,18 @@ export default function OnboardingPage() {
   const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user) {
+        // Not authenticated, redirect to signup
+        router.push('/auth/signup');
+      } else if (!isVerified) {
+        // Not verified, redirect to signin
+        router.push('/auth/signin');
+      }
+    }
+  }, [user, authLoading, isVerified, router]);
 
   const toggleTrainingDay = (day: string) => {
     if (trainingDaysPerWeek.includes(day)) {
@@ -112,6 +126,11 @@ export default function OnboardingPage() {
       return;
     }
 
+    if (!user || !isVerified) {
+      setError('Please sign in and verify your email to create a plan.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -121,11 +140,15 @@ export default function OnboardingPage() {
         ...(configMode === 'endDate' ? { endDate } : { trainingDaysCount }),
       };
 
-      savePlanConfig(config);
-      router.push('/auth/signup');
+      await createNewActivePlanForUser(user.uid, config);
+      router.push('/today');
     } catch (err) {
-      console.error('Error saving config:', err);
-      setError('Something went wrong. Please try again.');
+      console.error('Error creating plan:', err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to create your plan. Please try again.'
+      );
       setIsSubmitting(false);
     }
   };
@@ -135,6 +158,14 @@ export default function OnboardingPage() {
     tomorrow.setDate(tomorrow.getDate() + 1);
     return tomorrow.toISOString().split('T')[0];
   };
+
+  if (authLoading) {
+    return <LoadingSpinner message="Loading..." />;
+  }
+
+  if (!user || !isVerified) {
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
@@ -340,7 +371,7 @@ export default function OnboardingPage() {
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Link href="/" className="btn-secondary flex-1">
+            <Link href="/today" className="btn-secondary flex-1">
               Back
             </Link>
             <button
@@ -348,7 +379,7 @@ export default function OnboardingPage() {
               disabled={isSubmitting || Object.keys(validationErrors).length > 0}
               className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Saving...' : 'Continue to sign up'}
+              {isSubmitting ? 'Creating plan...' : 'Create plan'}
             </button>
           </div>
         </form>

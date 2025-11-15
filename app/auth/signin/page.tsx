@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getActiveFocusPlanForUser } from '@/lib/firestore/focusPlans';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -43,7 +44,15 @@ export default function SignInPage() {
         return;
       }
 
-      router.push('/today');
+      // Check if user has an active plan
+      const activePlan = await getActiveFocusPlanForUser(userCredential.user.uid);
+      
+      if (!activePlan) {
+        // No plan exists, redirect to onboarding to create one
+        router.push('/onboarding');
+      } else {
+        router.push('/today');
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import {
   getActiveFocusPlanForUser,
@@ -18,7 +19,8 @@ import { TodayProgress } from '@/components/TodayProgress';
 import { GlassCard, EmptyState, LoadingSpinner, Button } from '@/components/ui';
 
 export default function TodayPage() {
-  const { user } = useAuth();
+  const { user, isVerified } = useAuth();
+  const router = useRouter();
   const [plan, setPlan] = useState<FocusPlan | null>(null);
   const [pausedPlan, setPausedPlan] = useState<FocusPlan | null>(null);
   const [completedPlan, setCompletedPlan] = useState<FocusPlan | null>(null);
@@ -84,6 +86,10 @@ export default function TodayPage() {
           setPausedPlan(paused);
           setPlan(null);
           setCompletedPlan(null);
+        } else if (isVerified && allPlans.length === 0) {
+          // User is verified but has no plans at all, redirect to onboarding
+          router.push('/onboarding');
+          return;
         }
       }
     } catch (err: unknown) {
@@ -96,7 +102,7 @@ export default function TodayPage() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, isVerified, router]);
 
   useEffect(() => {
     loadPlan();
