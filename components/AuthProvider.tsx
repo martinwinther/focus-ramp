@@ -12,7 +12,7 @@ import {
   type User,
   signOut as firebaseSignOut,
 } from 'firebase/auth';
-import { firebaseAuth } from '@/lib/firebase/client';
+import { getFirebaseAuth } from '@/lib/firebase/client';
 
 interface AuthContextType {
   user: User | null;
@@ -28,16 +28,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
-      setUser(user);
+    // Only initialize on client side
+    if (typeof window === 'undefined') {
       setLoading(false);
-    });
+      return;
+    }
 
-    return () => unsubscribe();
+    try {
+      const auth = getFirebaseAuth();
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setUser(user);
+        setLoading(false);
+      });
+
+      return () => unsubscribe();
+    } catch (error) {
+      console.error('Error initializing Firebase Auth:', error);
+      setLoading(false);
+    }
   }, []);
 
   const signOut = async () => {
-    await firebaseSignOut(firebaseAuth);
+    try {
+      const auth = getFirebaseAuth();
+      await firebaseSignOut(auth);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   const isVerified = user?.emailVerified ?? false;
