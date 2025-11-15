@@ -34,7 +34,15 @@ export default function SignUpPage() {
         password
       );
 
-      await sendEmailVerification(userCredential.user);
+      // Configure email verification with continue URL
+      // Note: focus-ramp.martin-winther.workers.dev must be listed under
+      // Firebase → Authentication → Settings → Authorized domains
+      const actionCodeSettings = {
+        url: 'https://focus-ramp.martin-winther.workers.dev/auth/email-verified',
+        handleCodeInApp: false,
+      };
+
+      await sendEmailVerification(userCredential.user, actionCodeSettings);
       setVerificationSent(true);
     } catch (err: unknown) {
       if (err instanceof Error) {
