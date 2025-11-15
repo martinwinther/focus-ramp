@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
-import { createNewActivePlanForUser } from '@/lib/firestore/focusPlans';
 import { LoadingSpinner } from '@/components/ui';
 
 const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -49,16 +48,24 @@ export default function OnboardingPage() {
     if (!isClient || typeof window === 'undefined') return;
     if (authLoading) return;
 
-    if (!user) {
-      // Not authenticated, redirect to signup
-      router.push('/auth/signup');
-      return;
-    }
+    try {
+      if (!user) {
+        // Not authenticated, redirect to signup
+        router.push('/auth/signup');
+        return;
+      }
 
-    if (!isVerified) {
-      // Not verified, redirect to signin
-      router.push('/auth/signin');
-      return;
+      if (!isVerified) {
+        // Not verified, redirect to signin
+        router.push('/auth/signin');
+        return;
+      }
+    } catch (error) {
+      console.error('Error in onboarding redirect:', error);
+      // Fallback: if redirect fails, try window.location
+      if (typeof window !== 'undefined' && !user) {
+        window.location.href = '/auth/signup';
+      }
     }
   }, [isClient, user, authLoading, isVerified, router]);
 
@@ -145,6 +152,9 @@ export default function OnboardingPage() {
     setIsSubmitting(true);
 
     try {
+      // Dynamically import to avoid SSR issues
+      const { createNewActivePlanForUser } = await import('@/lib/firestore/focusPlans');
+      
       const config = {
         targetDailyMinutes,
         trainingDaysPerWeek,
@@ -171,7 +181,8 @@ export default function OnboardingPage() {
   };
 
   // Wait for client-side hydration before rendering anything
-  if (!isClient || authLoading) {
+  // Also ensure we're not in SSR
+  if (typeof window === 'undefined' || !isClient || authLoading) {
     return <LoadingSpinner message="Loading..." />;
   }
 
