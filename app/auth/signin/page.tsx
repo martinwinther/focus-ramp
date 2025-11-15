@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function SignInPage() {
+function SignInForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -13,6 +14,26 @@ export default function SignInPage() {
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+
+  // Check if user is coming from email verification
+  useEffect(() => {
+    // Check for our custom verified param or Firebase's verification params
+    const verified = searchParams.get('verified');
+    const mode = searchParams.get('mode');
+    const oobCode = searchParams.get('oobCode');
+    
+    // If we have verification-related params, show success message
+    if (verified === 'true' || mode === 'verifyEmail' || oobCode) {
+      setEmailVerified(true);
+      // Clean up URL by removing query params after showing message
+      const url = new URL(window.location.href);
+      url.search = '';
+      window.history.replaceState({}, '', url.toString());
+      // Auto-hide message after 5 seconds
+      setTimeout(() => setEmailVerified(false), 5000);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,8 +104,10 @@ export default function SignInPage() {
       // Configure email verification with continue URL
       // Note: focus-ramp.martin-winther.workers.dev must be listed under
       // Firebase → Authentication → Settings → Authorized domains
+      // Redirects directly to sign-in after Firebase's verification page
+      // Add verified=true param so we can show a success message
       const actionCodeSettings = {
-        url: 'https://focus-ramp.martin-winther.workers.dev/auth/email-verified',
+        url: 'https://focus-ramp.martin-winther.workers.dev/auth/signin?verified=true',
         handleCodeInApp: false,
       };
 
@@ -192,6 +215,27 @@ export default function SignInPage() {
           Sign in to continue your focus journey
         </p>
 
+        {emailVerified && (
+          <div className="mb-4 rounded-lg bg-green-500/20 border border-green-500/30 px-4 py-3 text-sm text-green-200 backdrop-blur-sm">
+            <div className="flex items-center gap-2">
+              <svg
+                className="h-5 w-5 text-green-400 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              <span>Email verified! You can now sign in.</span>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className="mb-4 rounded-lg bg-red-500/20 px-4 py-3 text-sm text-red-200 backdrop-blur-sm">
             {error}
@@ -254,6 +298,20 @@ export default function SignInPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="glass-card w-full max-w-md">
+          <div className="text-center text-white">Loading...</div>
+        </div>
+      </div>
+    }>
+      <SignInForm />
+    </Suspense>
   );
 }
 

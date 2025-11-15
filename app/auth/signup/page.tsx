@@ -37,8 +37,10 @@ export default function SignUpPage() {
       // Configure email verification with continue URL
       // Note: focus-ramp.martin-winther.workers.dev must be listed under
       // Firebase → Authentication → Settings → Authorized domains
+      // Redirects directly to sign-in after Firebase's verification page
+      // Add verified=true param so we can show a success message
       const actionCodeSettings = {
-        url: 'https://focus-ramp.martin-winther.workers.dev/auth/email-verified',
+        url: 'https://focus-ramp.martin-winther.workers.dev/auth/signin?verified=true',
         handleCodeInApp: false,
       };
 
