@@ -61,31 +61,49 @@ try {
 
 // Export getters that ensure initialization
 export function getFirebaseApp(): FirebaseApp {
-  if (!firebaseApp && typeof window !== 'undefined') {
+  // Only work on client side
+  if (typeof window === 'undefined') {
+    throw new Error('Firebase can only be used on the client side.');
+  }
+  
+  if (!firebaseApp) {
     initializeFirebase();
   }
+  
   if (!firebaseApp) {
-    throw new Error('Firebase app is not initialized. Make sure you are using this on the client side.');
+    throw new Error('Firebase app is not initialized. Please check your environment variables.');
   }
   return firebaseApp;
 }
 
 export function getFirebaseAuth(): Auth {
-  if (!firebaseAuth && typeof window !== 'undefined') {
+  // Only work on client side
+  if (typeof window === 'undefined') {
+    throw new Error('Firebase can only be used on the client side.');
+  }
+  
+  if (!firebaseAuth) {
     initializeFirebase();
   }
+  
   if (!firebaseAuth) {
-    throw new Error('Firebase auth is not initialized. Make sure you are using this on the client side.');
+    throw new Error('Firebase auth is not initialized. Please check your environment variables.');
   }
   return firebaseAuth;
 }
 
 export function getFirebaseFirestore(): Firestore {
-  if (!firebaseFirestore && typeof window !== 'undefined') {
+  // Only work on client side
+  if (typeof window === 'undefined') {
+    throw new Error('Firebase can only be used on the client side.');
+  }
+  
+  if (!firebaseFirestore) {
     initializeFirebase();
   }
+  
   if (!firebaseFirestore) {
-    throw new Error('Firebase firestore is not initialized. Make sure you are using this on the client side.');
+    throw new Error('Firebase firestore is not initialized. Please check your environment variables.');
   }
   return firebaseFirestore;
 }

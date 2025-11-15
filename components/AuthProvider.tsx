@@ -7,12 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import {
-  onAuthStateChanged,
-  type User,
-  signOut as firebaseSignOut,
-} from 'firebase/auth';
-import { getFirebaseAuth } from '@/lib/firebase/client';
+import type { User } from 'firebase/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -34,22 +29,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    try {
-      const auth = getFirebaseAuth();
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        setUser(user);
+    // Dynamically import Firebase to avoid SSR issues
+    Promise.all([
+      import('firebase/auth'),
+      import('@/lib/firebase/client'),
+    ])
+      .then(([{ onAuthStateChanged, signOut: firebaseSignOut }, { getFirebaseAuth }]) => {
+        try {
+          const auth = getFirebaseAuth();
+          const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setUser(user);
+            setLoading(false);
+          });
+
+          // Store signOut function for later use
+          (window as any).__firebaseSignOut = firebaseSignOut;
+          (window as any).__getFirebaseAuth = getFirebaseAuth;
+
+          return () => unsubscribe();
+        } catch (error) {
+          console.error('Error initializing Firebase Auth:', error);
+          setLoading(false);
+        }
+      })
+      .catch((error) => {
+        console.error('Error loading Firebase modules:', error);
         setLoading(false);
       });
-
-      return () => unsubscribe();
-    } catch (error) {
-      console.error('Error initializing Firebase Auth:', error);
-      setLoading(false);
-    }
   }, []);
 
   const signOut = async () => {
     try {
+      const [{ signOut: firebaseSignOut }, { getFirebaseAuth }] = await Promise.all([
+        import('firebase/auth'),
+        import('@/lib/firebase/client'),
+      ]);
       const auth = getFirebaseAuth();
       await firebaseSignOut(auth);
     } catch (error) {
