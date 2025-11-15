@@ -38,3 +38,106 @@ As you progress through the plan:
 ## Design Philosophy
 
 The app emphasizes gentle progression and clarity. The interface uses a calm, glassmorphic design inspired by Apple's aesthetic, creating a distraction-free environment that supports deep work rather than adding cognitive load.
+
+## Tech Stack
+
+- **Frontend:** Next.js 15 with App Router, TypeScript, Tailwind CSS
+- **Backend:** Firebase Authentication + Firestore
+- **Deployment:** Cloudflare Workers (via OpenNext.js)
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- A Firebase project (see [Firebase Setup Guide](./docs/firebase-setup.md))
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone <repository-url>
+cd focus-ramp
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Set up Firebase:
+   - Follow the [Firebase Setup Guide](./docs/firebase-setup.md)
+   - Copy `.env.local.example` to `.env.local`
+   - Add your Firebase configuration values
+
+4. Run the development server:
+
+```bash
+npm run dev
+```
+
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+### Deploy to Cloudflare
+
+```bash
+npm run deploy
+```
+
+## Project Structure
+
+```
+focus-ramp/
+├── app/                    # Next.js App Router pages
+│   ├── (app)/             # Protected app routes
+│   │   ├── today/         # Today view (main dashboard)
+│   │   ├── history/       # History view
+│   │   └── settings/      # Settings view
+│   ├── auth/              # Authentication pages
+│   │   ├── signin/        # Sign in page
+│   │   └── signup/        # Sign up page
+│   └── onboarding/        # Goal configuration flow
+├── components/            # Reusable React components
+│   └── AuthProvider.tsx   # Auth context provider
+├── lib/                   # Utility functions and helpers
+│   ├── firebase/          # Firebase client setup
+│   ├── firestore/         # Firestore data access
+│   ├── types/             # TypeScript type definitions
+│   └── hooks/             # Custom React hooks
+└── docs/                  # Documentation
+    ├── firebase-setup.md  # Firebase setup instructions
+    └── focus-ramp-design.md  # Product design document
+```
+
+## Current Status
+
+**Phase 1: Complete ✓**
+- Firebase Authentication (email/password with verification)
+- Firestore integration
+- Onboarding flow (goal configuration)
+- Basic plan creation and display
+- Protected routes
+
+**Phase 2: In Progress**
+- Daily ramp generator (TODO)
+- Pomodoro timer (TODO)
+- Session tracking (TODO)
+- History view (TODO)
+
+## Documentation
+
+- [Firebase Setup Guide](./docs/firebase-setup.md) - Complete Firebase configuration instructions
+- [Product Design](./docs/focus-ramp-design.md) - Detailed product vision and design
+- [Best Practices](./docs/best-practices.md) - Development guidelines
+
+## License
+
+MIT

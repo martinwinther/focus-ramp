@@ -44,4 +44,5 @@ cloudflare-env.d.ts
 
 # documentation
 /docs
+/logs
 

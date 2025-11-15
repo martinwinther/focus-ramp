@@ -36,12 +36,12 @@ export default function HomePage() {
 
           {/* CTA Button */}
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <Link href="/today" className="btn-primary">
+            <Link href="/onboarding" className="btn-primary">
               Get started
             </Link>
-            <button className="btn-secondary">
-              Learn more
-            </button>
+            <Link href="/auth/signin" className="btn-secondary">
+              Sign in
+            </Link>
           </div>
 
           {/* Feature Pills */}
