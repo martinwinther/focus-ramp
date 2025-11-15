@@ -3,7 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { usePomodoroTimer } from '@/lib/focus/usePomodoroTimer';
 import { logCompletedWorkSegment } from '@/lib/firestore/sessionLogs';
+import { getUserPreferences } from '@/lib/firestore/userPreferences';
+import { GlassCard } from '@/components/ui';
 import type { FocusSegment } from '@/lib/types/focusPlan';
+import type { UserPreferences } from '@/lib/firestore/userPreferences';
 
 interface PomodoroTimerProps {
   userId: string;
@@ -25,13 +28,48 @@ export function PomodoroTimer({
   date,
 }: PomodoroTimerProps) {
   const [isLoggingError, setIsLoggingError] = useState(false);
+  const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const segmentStartTimesRef = useRef<Map<number, Date>>(new Map());
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    async function loadPreferences() {
+      try {
+        const prefs = await getUserPreferences(userId);
+        setPreferences(prefs);
+      } catch (error) {
+        console.error('Error loading preferences:', error);
+      }
+    }
+
+    loadPreferences();
+
+    // Create audio element for completion sound
+    if (typeof window !== 'undefined') {
+      audioRef.current = new Audio();
+      // Simple notification sound using data URI (a pleasant chime)
+      audioRef.current.src =
+        'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuAzPLZiTYIG2m98OGpTAoQU6rm8LNlHQU2kdry0H4sBS2Aycy93ogzBxdqvfDnr1YJDVW06e+wXhwE';
+    }
+  }, [userId]);
+
+  const playCompletionSound = () => {
+    if (preferences?.soundEnabled && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch((error) => {
+        console.error('Error playing sound:', error);
+      });
+    }
+  };
 
   const handleWorkSegmentStart = (segmentIndex: number, segment: FocusSegment) => {
     segmentStartTimesRef.current.set(segmentIndex, new Date());
   };
 
   const handleSegmentComplete = async (segmentIndex: number, segment: FocusSegment) => {
+    // Play sound for any segment completion
+    playCompletionSound();
+
     // Only log work segments
     if (segment.type !== 'work') return;
 
@@ -54,7 +92,6 @@ export function PomodoroTimer({
         endedAt: endTime,
       });
 
-      // Clear the start time
       segmentStartTimesRef.current.delete(segmentIndex);
       setIsLoggingError(false);
     } catch (error) {
@@ -76,8 +113,8 @@ export function PomodoroTimer({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getSegmentStatusIcon = (index: number) => {
-    if (state.completedSegments.includes(index)) {
+  const getSegmentIcon = (segment: FocusSegment, isActive: boolean, isCompleted: boolean) => {
+    if (isCompleted) {
       return (
         <svg
           className="h-5 w-5 text-green-400"
@@ -94,14 +131,44 @@ export function PomodoroTimer({
         </svg>
       );
     }
-    
-    if (index === state.currentIndex) {
+
+    if (isActive) {
+      return <div className="h-2 w-2 rounded-full bg-white animate-pulse"></div>;
+    }
+
+    if (segment.type === 'work') {
       return (
-        <div className="h-2 w-2 rounded-full bg-white animate-pulse"></div>
+        <svg
+          className="h-5 w-5 text-white/60"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M13 10V3L4 14h7v7l9-11h-7z"
+          />
+        </svg>
       );
     }
-    
-    return null;
+
+    return (
+      <svg
+        className="h-5 w-5 text-white/40"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    );
   };
 
   const completedWorkMinutes = segments
@@ -114,33 +181,90 @@ export function PomodoroTimer({
     .reduce((sum, seg) => sum + seg.minutes, 0);
 
   const progressPercentage = (completedWorkMinutes / totalWorkMinutes) * 100;
+  const currentSegment = segments[state.currentIndex];
+  const isWorkSegment = currentSegment?.type === 'work';
 
   return (
     <div className="space-y-6">
       {/* Main Timer Display */}
-      <div className="glass-card text-center">
+      <GlassCard className="text-center">
+        {/* Session Type Label */}
         <div className="mb-4">
-          <div className="text-sm text-white/60">
-            {state.currentSegment?.type === 'work' ? 'Focus Session' : 'Break Time'}
-          </div>
-          <div className="mt-2 text-7xl font-bold text-white tabular-nums">
-            {formatTime(state.secondsRemaining)}
-          </div>
-          <div className="mt-2 text-white/70">
-            Segment {state.currentIndex + 1} of {segments.length}
+          <div
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              isWorkSegment
+                ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                : 'bg-green-500/20 text-green-300 border border-green-500/30'
+            }`}
+          >
+            {isWorkSegment ? (
+              <>
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+                Work session
+              </>
+            ) : (
+              <>
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                Break time
+              </>
+            )}
           </div>
         </div>
 
-        {/* Progress Bar */}
+        {/* Timer Display */}
+        <div
+          className={`mb-6 text-8xl font-bold tabular-nums transition-colors ${
+            isWorkSegment ? 'text-blue-300' : 'text-green-300'
+          }`}
+        >
+          {formatTime(state.secondsRemaining)}
+        </div>
+
+        {/* Segment Progress */}
+        <div className="mb-6 text-white/70">
+          Session {state.currentIndex + 1} of {segments.length}
+        </div>
+
+        {/* Work Progress Bar */}
         <div className="mb-6">
-          <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+          <div className="mb-2 flex items-center justify-between text-sm">
+            <span className="text-white/60">Work completed today</span>
+            <span className="font-semibold text-white">
+              {completedWorkMinutes} / {totalWorkMinutes} min
+            </span>
+          </div>
+          <div className="h-3 w-full overflow-hidden rounded-full bg-white/10">
             <div
-              className="h-full rounded-full bg-white/80 transition-all duration-500"
+              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-500"
               style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>
-          <div className="mt-2 text-sm text-white/60">
-            {completedWorkMinutes} of {totalWorkMinutes} work minutes completed
+          <div className="mt-1 text-xs text-white/50">
+            {Math.round(progressPercentage)}% complete
           </div>
         </div>
 
@@ -149,40 +273,35 @@ export function PomodoroTimer({
           <div className="flex justify-center gap-3">
             {!state.isRunning ? (
               <button
-                onClick={state.currentIndex === 0 && state.secondsRemaining === segments[0]?.minutes * 60 ? controls.start : controls.resume}
+                onClick={
+                  state.currentIndex === 0 &&
+                  state.secondsRemaining === segments[0]?.minutes * 60
+                    ? controls.start
+                    : controls.resume
+                }
                 className="btn-primary"
+                aria-label={
+                  state.currentIndex === 0 &&
+                  state.secondsRemaining === segments[0]?.minutes * 60
+                    ? 'Start session'
+                    : 'Resume session'
+                }
               >
-                {state.currentIndex === 0 && state.secondsRemaining === segments[0]?.minutes * 60 ? (
-                  <>
-                    <svg
-                      className="h-5 w-5"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                    Start
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      className="h-5 w-5"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                    Resume
-                  </>
-                )}
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                {state.currentIndex === 0 &&
+                state.secondsRemaining === segments[0]?.minutes * 60
+                  ? 'Start'
+                  : 'Resume'}
               </button>
             ) : (
-              <button onClick={controls.pause} className="btn-secondary">
-                <svg
-                  className="h-5 w-5"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
+              <button
+                onClick={controls.pause}
+                className="btn-primary"
+                aria-label="Pause session"
+              >
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
                 </svg>
                 Pause
@@ -191,24 +310,26 @@ export function PomodoroTimer({
 
             <button
               onClick={controls.skipSegment}
-              className="rounded-xl bg-white/10 px-6 py-3 font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/20"
+              className="btn-secondary"
+              aria-label="Skip to next session"
             >
               Skip
             </button>
 
             <button
               onClick={controls.reset}
-              className="rounded-xl bg-white/10 px-6 py-3 font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/20"
+              className="btn-ghost"
+              aria-label="Reset timer"
             >
               Reset
             </button>
           </div>
         ) : (
           <div>
-            <div className="mb-4 flex justify-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20">
+            <div className="mb-6 flex justify-center">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-500/20">
                 <svg
-                  className="h-8 w-8 text-green-400"
+                  className="h-10 w-10 text-green-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -222,14 +343,14 @@ export function PomodoroTimer({
                 </svg>
               </div>
             </div>
-            <h3 className="mb-2 text-2xl font-bold text-white">
-              Great work!
+            <h3 className="mb-2 text-3xl font-bold text-white">
+              All sessions complete!
             </h3>
-            <p className="mb-4 text-white/70">
-              You've completed all segments for today.
+            <p className="mb-6 text-lg text-white/70">
+              Great work today. You completed {totalWorkMinutes} minutes of focused work.
             </p>
-            <button onClick={controls.reset} className="btn-primary">
-              Reset Timer
+            <button onClick={controls.reset} className="btn-secondary">
+              Review sessions
             </button>
           </div>
         )}
@@ -239,87 +360,60 @@ export function PomodoroTimer({
             Warning: Some work sessions may not have been logged properly.
           </div>
         )}
-      </div>
+      </GlassCard>
 
       {/* Segment List */}
-      <div className="glass-card">
-        <h3 className="mb-4 text-lg font-semibold text-white">
-          Today's Segments
-        </h3>
+      <GlassCard>
+        <h3 className="mb-4 text-lg font-semibold text-white">Today's sessions</h3>
+        <p className="mb-4 text-sm text-white/60">
+          Work through each session at your own pace
+        </p>
         <div className="space-y-2">
-          {segments.map((segment, index) => (
-            <div
-              key={index}
-              className={`flex items-center justify-between rounded-xl p-4 transition-all ${
-                index === state.currentIndex
-                  ? 'bg-white/20 ring-2 ring-white/30'
-                  : state.completedSegments.includes(index)
-                  ? 'bg-white/5 opacity-60'
-                  : 'bg-white/5'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-lg ${
-                    segment.type === 'work' ? 'bg-white/20' : 'bg-white/10'
-                  }`}
-                >
-                  {segment.type === 'work' ? (
-                    <svg
-                      className="h-5 w-5 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 10V3L4 14h7v7l9-11h-7z"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="h-5 w-5 text-white/70"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  )}
-                </div>
-                <div>
-                  <div className="font-medium text-white">
-                    {segment.type === 'work' ? 'Work Session' : 'Break'}
-                  </div>
-                  <div className="text-sm text-white/60">
-                    {segment.minutes} minutes
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {getSegmentStatusIcon(index)}
-              </div>
-            </div>
-          ))}
-        </div>
+          {segments.map((segment, index) => {
+            const isActive = index === state.currentIndex;
+            const isCompleted = state.completedSegments.includes(index);
 
-        <div className="mt-4 rounded-lg bg-white/5 p-4">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-white/60">Day {dayIndex} Target</div>
-            <div className="text-lg font-bold text-white">
-              {dailyTargetMinutes} minutes
-            </div>
-          </div>
+            return (
+              <div
+                key={index}
+                className={`flex items-center justify-between rounded-xl p-4 transition-all ${
+                  isActive
+                    ? 'bg-white/20 ring-2 ring-white/30 scale-[1.02]'
+                    : isCompleted
+                    ? 'bg-white/5 opacity-60'
+                    : 'bg-white/5 hover:bg-white/10'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${
+                      isCompleted
+                        ? 'bg-green-500/20'
+                        : segment.type === 'work'
+                        ? 'bg-blue-500/20'
+                        : 'bg-white/10'
+                    }`}
+                  >
+                    {getSegmentIcon(segment, isActive, isCompleted)}
+                  </div>
+                  <div>
+                    <div className="font-medium text-white">
+                      {segment.type === 'work' ? 'Work session' : 'Break'}
+                    </div>
+                    <div className="text-sm text-white/60">{segment.minutes} minutes</div>
+                  </div>
+                </div>
+                {isActive && state.isRunning && (
+                  <div className="flex items-center gap-2 text-sm text-white/80">
+                    <span className="h-2 w-2 rounded-full bg-white animate-pulse"></span>
+                    In progress
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-      </div>
+      </GlassCard>
     </div>
   );
 }
-

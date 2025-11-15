@@ -87,13 +87,14 @@ export default function AppLayout({
       <header className="sticky top-0 z-50 border-b border-white/10 bg-white/5 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2" aria-label="Focus Ramp home">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
                 <svg
                   className="h-5 w-5 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
+                  aria-hidden="true"
                 >
                   <path
                     strokeLinecap="round"
@@ -106,34 +107,38 @@ export default function AppLayout({
               <span className="text-lg font-semibold text-white">Focus Ramp</span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden md:flex items-center gap-1" aria-label="Main navigation">
               <Link
                 href="/today"
                 className={`nav-link ${pathname === '/today' ? 'nav-link-active' : ''}`}
+                aria-current={pathname === '/today' ? 'page' : undefined}
               >
                 Today
               </Link>
               <Link
                 href="/history"
                 className={`nav-link ${pathname === '/history' ? 'nav-link-active' : ''}`}
+                aria-current={pathname === '/history' ? 'page' : undefined}
               >
                 History
               </Link>
               <Link
                 href="/settings"
                 className={`nav-link ${pathname === '/settings' ? 'nav-link-active' : ''}`}
+                aria-current={pathname === '/settings' ? 'page' : undefined}
               >
                 Settings
               </Link>
             </nav>
 
             <div className="flex items-center gap-3">
-              <div className="hidden sm:block text-sm text-white/80">
+              <div className="hidden sm:block text-sm text-white/80" aria-label="User email">
                 {user.email}
               </div>
               <button
                 onClick={signOut}
                 className="rounded-lg px-3 py-1.5 text-sm text-white/80 hover:bg-white/10 transition-colors"
+                aria-label="Sign out"
               >
                 Sign out
               </button>
@@ -146,23 +151,26 @@ export default function AppLayout({
         {children}
       </main>
 
-      <nav className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 md:hidden">
+      <nav className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 md:hidden" aria-label="Mobile navigation">
         <div className="glass-nav flex items-center gap-1 px-2 py-2">
           <Link
             href="/today"
             className={`nav-link ${pathname === '/today' ? 'nav-link-active' : ''}`}
+            aria-current={pathname === '/today' ? 'page' : undefined}
           >
             Today
           </Link>
           <Link
             href="/history"
             className={`nav-link ${pathname === '/history' ? 'nav-link-active' : ''}`}
+            aria-current={pathname === '/history' ? 'page' : undefined}
           >
             History
           </Link>
           <Link
             href="/settings"
             className={`nav-link ${pathname === '/settings' ? 'nav-link-active' : ''}`}
+            aria-current={pathname === '/settings' ? 'page' : undefined}
           >
             Settings
           </Link>

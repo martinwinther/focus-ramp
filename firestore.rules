@@ -12,6 +12,22 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
+    // User Preferences collection
+    match /userPreferences/{userId} {
+      // Users can read their own preferences
+      allow read: if isOwner(userId);
+      
+      // Users can create their own preferences
+      allow create: if isAuthenticated() && 
+                       request.auth.uid == userId;
+      
+      // Users can update their own preferences
+      allow update: if isOwner(userId);
+      
+      // Users can delete their own preferences
+      allow delete: if isOwner(userId);
+    }
+    
     // Focus Plans collection
     match /focusPlans/{planId} {
       // Users can read their own plans
@@ -64,4 +80,3 @@ service cloud.firestore {
     }
   }
 }
-

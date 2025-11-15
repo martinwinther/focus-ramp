@@ -95,10 +95,10 @@ export default function OnboardingPage() {
         </div>
 
         <h1 className="mb-2 text-center text-3xl font-bold text-white">
-          Configure your focus goal
+          Create your focus plan
         </h1>
         <p className="mb-8 text-center text-white/80">
-          Set your target and we'll create a gradual training plan
+          We'll slowly ramp up your daily focus time from a small start to your goal
         </p>
 
         {error && (
@@ -126,7 +126,7 @@ export default function OnboardingPage() {
               required
             />
             <p className="mt-1 text-xs text-white/60">
-              The amount of focused work time you want to reach per day (e.g., 180 = 3 hours)
+              Your end goal for daily focus time (e.g., 180 minutes = 3 hours)
             </p>
           </div>
 
@@ -221,7 +221,7 @@ export default function OnboardingPage() {
               ))}
             </div>
             <p className="mt-2 text-xs text-white/60">
-              Select the days you want to train each week
+              Choose which days you'll train (we recommend starting with weekdays)
             </p>
           </div>
 

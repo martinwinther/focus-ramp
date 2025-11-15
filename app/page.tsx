@@ -26,12 +26,12 @@ export default function HomePage() {
 
           {/* Main Headline */}
           <h1 className="mb-4 text-5xl font-bold text-white text-balance md:text-6xl">
-            Train your focus, one step at a time
+            Build your focus capacity, gradually
           </h1>
 
           {/* Subheading */}
           <p className="mb-8 text-lg text-white/90 text-balance md:text-xl">
-            Set a focus goal. Pick an end date. Get a gradual training ramp with daily Pomodoro sessions that build your deep work capacity.
+            Set a goal and target date. We'll create a gentle training plan with Pomodoro sessions that grow with you.
           </p>
 
           {/* CTA Button */}
@@ -60,7 +60,7 @@ export default function HomePage() {
 
         {/* Footer Note */}
         <p className="mt-8 text-center text-sm text-white/60">
-          Build capacity for deep work without burning out
+          No pressure. No perfectionism. Just steady progress.
         </p>
       </div>
     </div>

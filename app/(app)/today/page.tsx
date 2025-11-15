@@ -12,6 +12,7 @@ import { getFocusDayForDate, getNextTrainingDay } from '@/lib/firestore/focusDay
 import type { FocusPlan, FocusDay } from '@/lib/types/focusPlan';
 import { PomodoroTimer } from '@/components/PomodoroTimer';
 import { TodayProgress } from '@/components/TodayProgress';
+import { GlassCard, EmptyState, LoadingSpinner, Button } from '@/components/ui';
 
 export default function TodayPage() {
   const { user } = useAuth();
@@ -35,12 +36,10 @@ export default function TodayPage() {
           setPlan(existingPlan);
           clearPlanConfig();
           
-          // Load today's focus day
           const today = new Date().toISOString().split('T')[0];
           const dayData = await getFocusDayForDate(existingPlan.id!, today);
           setTodayDay(dayData);
           
-          // If no day for today, get the next upcoming training day
           if (!dayData) {
             const upcoming = await getNextTrainingDay(existingPlan.id!);
             setNextDay(upcoming);
@@ -52,7 +51,6 @@ export default function TodayPage() {
           setPlan(newPlan);
           clearPlanConfig();
           
-          // Load today's focus day for the new plan
           if (newPlan) {
             const today = new Date().toISOString().split('T')[0];
             const dayData = await getFocusDayForDate(newPlan.id!, today);
@@ -75,65 +73,47 @@ export default function TodayPage() {
     loadPlan();
   }, [user, config, clearPlanConfig]);
 
-  // Refresh progress periodically to show updated stats
   useEffect(() => {
     if (!todayDay) return;
 
     const interval = setInterval(() => {
       setProgressKey((prev) => prev + 1);
-    }, 10000); // Refresh every 10 seconds
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [todayDay]);
 
   if (loading || creating) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="glass-card">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-white"></div>
-            <p className="text-white">
-              {creating ? 'Creating your plan...' : 'Loading...'}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner message={creating ? 'Creating your plan...' : 'Loading...'} />;
   }
 
   if (!plan) {
     return (
       <div className="mx-auto max-w-3xl">
-        <div className="glass-card text-center">
-          <div className="mb-6 flex justify-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/10">
-              <svg
-                className="h-10 w-10 text-white/60"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                />
-              </svg>
-            </div>
-          </div>
-
-          <h1 className="mb-3 text-3xl font-bold text-white">
-            No active plan
-          </h1>
-          <p className="mb-6 text-lg text-white/80">
-            You don't have an active focus plan yet. Create one to get started with your training journey.
-          </p>
-
-          <Link href="/onboarding" className="btn-primary inline-block">
-            Create your plan
-          </Link>
-        </div>
+        <EmptyState
+          icon={
+            <svg
+              className="h-10 w-10 text-white/60"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+          }
+          title="No active focus plan"
+          description="Create a plan to start building your focus capacity"
+          action={
+            <Link href="/onboarding">
+              <Button>Create your plan</Button>
+            </Link>
+          }
+        />
       </div>
     );
   }
@@ -156,93 +136,80 @@ export default function TodayPage() {
     });
   };
 
-  // Show message when there's no training day for today
   if (plan && !todayDay && nextDay) {
     return (
       <div className="mx-auto max-w-3xl">
-        <div className="glass-card text-center">
-          <div className="mb-6 flex justify-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/10">
-              <svg
-                className="h-10 w-10 text-white/60"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-          </div>
-
-          <h1 className="mb-3 text-3xl font-bold text-white">
-            No training scheduled today
-          </h1>
-          <p className="mb-6 text-lg text-white/80">
-            Today is a rest day. Your next training session is on:
-          </p>
-
-          <div className="mb-6 rounded-xl bg-white/5 p-6">
-            <div className="text-sm text-white/60">Next training day</div>
-            <div className="mt-2 text-2xl font-bold text-white">
-              {formatDate(nextDay.date)}
-            </div>
-            <div className="mt-1 text-white/70">
-              Day {nextDay.index} • {nextDay.dailyTargetMinutes} minutes
-            </div>
-          </div>
-
-          <Link href="/history" className="btn-secondary inline-block">
-            View training history
-          </Link>
-        </div>
+        <EmptyState
+          icon={
+            <svg
+              className="h-10 w-10 text-white/60"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          }
+          title="Rest day"
+          description="No training scheduled today. Take a break and come back stronger."
+          action={
+            <GlassCard className="mt-6">
+              <div className="text-center">
+                <div className="text-sm text-white/60">Next training day</div>
+                <div className="mt-2 text-2xl font-bold text-white">
+                  {formatDate(nextDay.date)}
+                </div>
+                <div className="mt-1 text-white/70">
+                  Day {nextDay.index} • {nextDay.dailyTargetMinutes} minutes
+                </div>
+                <Link href="/history" className="mt-4 inline-block">
+                  <Button variant="secondary">View history</Button>
+                </Link>
+              </div>
+            </GlassCard>
+          }
+        />
       </div>
     );
   }
 
-  // Show message when plan is complete or no upcoming days
   if (plan && !todayDay && !nextDay) {
     return (
       <div className="mx-auto max-w-3xl">
-        <div className="glass-card text-center">
-          <div className="mb-6 flex justify-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/10">
-              <svg
-                className="h-10 w-10 text-white/60"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+        <EmptyState
+          icon={
+            <svg
+              className="h-10 w-10 text-white/60"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          }
+          title="Plan complete!"
+          description="Congratulations! You've finished your training plan."
+          action={
+            <div className="flex gap-3">
+              <Link href="/history">
+                <Button variant="secondary">View history</Button>
+              </Link>
+              <Link href="/onboarding">
+                <Button>Create new plan</Button>
+              </Link>
             </div>
-          </div>
-
-          <h1 className="mb-3 text-3xl font-bold text-white">
-            Plan complete!
-          </h1>
-          <p className="mb-6 text-lg text-white/80">
-            You've finished your training plan. Great work!
-          </p>
-
-          <div className="flex justify-center gap-3">
-            <Link href="/history" className="btn-secondary inline-block">
-              View history
-            </Link>
-            <Link href="/onboarding" className="btn-primary inline-block">
-              Create new plan
-            </Link>
-          </div>
-        </div>
+          }
+        />
       </div>
     );
   }
@@ -251,24 +218,24 @@ export default function TodayPage() {
     <div className="mx-auto max-w-4xl space-y-6">
       {todayDay && (
         <>
-          <div className="glass-card">
+          <GlassCard>
             <div className="mb-6">
-              <h1 className="text-3xl font-bold text-white">Today</h1>
+              <h1 className="text-3xl font-bold text-white">Today's training</h1>
               <p className="mt-1 text-white/70">
-                {formatDate(todayDay.date)} • Day {todayDay.index} of your focus journey
+                {formatDate(todayDay.date)} • Day {todayDay.index}
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-xl bg-white/5 p-4">
-                <div className="text-sm text-white/60">Target today</div>
+                <div className="text-sm text-white/60">Today's target</div>
                 <div className="mt-1 text-2xl font-bold text-white">
                   {todayDay.dailyTargetMinutes} min
                 </div>
               </div>
 
               <div className="rounded-xl bg-white/5 p-4">
-                <div className="text-sm text-white/60">Final goal</div>
+                <div className="text-sm text-white/60">Plan goal</div>
                 <div className="mt-1 text-2xl font-bold text-white">
                   {plan.targetDailyMinutes} min
                 </div>
@@ -281,7 +248,7 @@ export default function TodayPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </GlassCard>
 
           <TodayProgress
             userId={user!.uid}

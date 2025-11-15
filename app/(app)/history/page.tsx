@@ -11,6 +11,7 @@ import {
   type DailySummary,
   type StreakInfo,
 } from '@/lib/focus/history';
+import { GlassCard, EmptyState, LoadingSpinner, Button } from '@/components/ui';
 import type { FocusPlan } from '@/lib/types/focusPlan';
 
 export default function HistoryPage() {
@@ -55,49 +56,36 @@ export default function HistoryPage() {
   }, [user]);
 
   if (loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="glass-card">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-white"></div>
-            <p className="text-white">Loading history...</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner message="Loading history..." />;
   }
 
   if (!plan) {
     return (
       <div className="mx-auto max-w-3xl">
-        <div className="glass-card text-center">
-          <div className="mb-6 flex justify-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/10">
-              <svg
-                className="h-10 w-10 text-white/60"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                />
-              </svg>
-            </div>
-          </div>
-
-          <h1 className="mb-3 text-3xl font-bold text-white">No active plan</h1>
-          <p className="mb-6 text-lg text-white/80">
-            Create a focus plan to start tracking your training history.
-          </p>
-
-          <Link href="/onboarding" className="btn-primary inline-block">
-            Create your plan
-          </Link>
-        </div>
+        <EmptyState
+          icon={
+            <svg
+              className="h-10 w-10 text-white/60"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+          }
+          title="No active focus plan"
+          description="Create a plan to start tracking your progress"
+          action={
+            <Link href="/onboarding">
+              <Button>Create your plan</Button>
+            </Link>
+          }
+        />
       </div>
     );
   }
@@ -137,7 +125,7 @@ export default function HistoryPage() {
   };
 
   const getCompletionLabel = (ratio: number) => {
-    if (ratio >= 1.0) return 'Completed';
+    if (ratio >= 1.0) return 'Complete';
     if (ratio >= 0.8) return 'Nearly done';
     if (ratio > 0) return 'In progress';
     return 'Not started';
@@ -145,22 +133,19 @@ export default function HistoryPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      {/* Page Header */}
-      <div className="glass-card">
-        <h1 className="text-3xl font-bold text-white">Training History</h1>
-        <p className="mt-2 text-white/70">
+      <header>
+        <h1 className="text-4xl font-bold text-white">Training history</h1>
+        <p className="mt-2 text-lg text-white/70">
           Track your progress and maintain your streak
         </p>
-      </div>
+      </header>
 
-      {/* Summary Stats */}
-      <div className="glass-card">
+      <GlassCard>
         <h2 className="mb-4 text-xl font-semibold text-white">Overview</h2>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {/* Streaks */}
           <div className="rounded-xl bg-white/5 p-4">
-            <div className="text-sm text-white/60">Current Streak</div>
+            <div className="text-sm text-white/60">Current streak</div>
             <div className="mt-1 flex items-baseline gap-2">
               <span className="text-3xl font-bold text-white">
                 {streaks.currentStreak}
@@ -170,7 +155,7 @@ export default function HistoryPage() {
           </div>
 
           <div className="rounded-xl bg-white/5 p-4">
-            <div className="text-sm text-white/60">Longest Streak</div>
+            <div className="text-sm text-white/60">Longest streak</div>
             <div className="mt-1 flex items-baseline gap-2">
               <span className="text-3xl font-bold text-white">
                 {streaks.longestStreak}
@@ -179,9 +164,8 @@ export default function HistoryPage() {
             </div>
           </div>
 
-          {/* Total Progress */}
           <div className="rounded-xl bg-white/5 p-4">
-            <div className="text-sm text-white/60">Training Days</div>
+            <div className="text-sm text-white/60">Days completed</div>
             <div className="mt-1 flex items-baseline gap-2">
               <span className="text-3xl font-bold text-white">
                 {stats.completedDays}
@@ -191,7 +175,7 @@ export default function HistoryPage() {
           </div>
 
           <div className="rounded-xl bg-white/5 p-4">
-            <div className="text-sm text-white/60">Total Focus Time</div>
+            <div className="text-sm text-white/60">Total focus time</div>
             <div className="mt-1 flex items-baseline gap-2">
               <span className="text-3xl font-bold text-white">
                 {stats.totalActualMinutes}
@@ -201,11 +185,10 @@ export default function HistoryPage() {
           </div>
         </div>
 
-        {/* Target Info */}
         <div className="mt-6 rounded-xl bg-white/5 p-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div className="text-sm text-white/60">Plan Goal</div>
+              <div className="text-sm text-white/60">Plan goal</div>
               <div className="mt-1 text-2xl font-bold text-white">
                 {plan.targetDailyMinutes} min/day
               </div>
@@ -218,7 +201,7 @@ export default function HistoryPage() {
             </div>
             {stats.totalDays > 0 && (
               <div>
-                <div className="text-sm text-white/60">Average Completion</div>
+                <div className="text-sm text-white/60">Avg completion</div>
                 <div className="mt-1 text-lg text-white">
                   {Math.round(stats.averageCompletionRatio * 100)}%
                 </div>
@@ -226,12 +209,11 @@ export default function HistoryPage() {
             )}
           </div>
         </div>
-      </div>
+      </GlassCard>
 
-      {/* Daily Progress List */}
-      <div className="glass-card">
+      <GlassCard>
         <h2 className="mb-4 text-xl font-semibold text-white">
-          Daily Progress
+          Daily progress
         </h2>
 
         {summaries.length === 0 ? (
@@ -253,11 +235,14 @@ export default function HistoryPage() {
                 </svg>
               </div>
             </div>
-            <p className="text-white/70">
-              No training days completed yet. Start your first session today!
+            <p className="mb-4 text-lg text-white/70">
+              You haven't started any training days yet
             </p>
-            <Link href="/today" className="btn-primary mt-4 inline-block">
-              Go to Today
+            <p className="mb-6 text-sm text-white/60">
+              Complete your first work session to see your progress here
+            </p>
+            <Link href="/today">
+              <Button>Start today's training</Button>
             </Link>
           </div>
         ) : (
@@ -280,7 +265,6 @@ export default function HistoryPage() {
                   }`}
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    {/* Date & Day Info */}
                     <div className="flex items-center gap-3">
                       <div
                         className={`flex h-12 w-12 items-center justify-center rounded-lg ${
@@ -351,7 +335,6 @@ export default function HistoryPage() {
                       </div>
                     </div>
 
-                    {/* Progress Info */}
                     <div className="flex-1 sm:mx-6">
                       <div className="mb-1 flex justify-between text-sm">
                         <span className="text-white/60">
@@ -376,7 +359,6 @@ export default function HistoryPage() {
                       </div>
                     </div>
 
-                    {/* Status Label */}
                     <div className="text-right">
                       <span
                         className={`text-sm font-medium ${getCompletionColor(
@@ -392,12 +374,12 @@ export default function HistoryPage() {
             })}
           </div>
         )}
-      </div>
+      </GlassCard>
 
       {summaries.length > 0 && (
         <div className="flex justify-center">
-          <Link href="/today" className="btn-primary">
-            Continue Training
+          <Link href="/today">
+            <Button>Continue training</Button>
           </Link>
         </div>
       )}
