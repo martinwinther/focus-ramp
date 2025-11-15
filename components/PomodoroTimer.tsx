@@ -2,11 +2,19 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { usePomodoroTimer } from '@/lib/focus/usePomodoroTimer';
-import { logCompletedWorkSegment } from '@/lib/firestore/sessionLogs';
+import { logCompletedWorkSegment, getSessionLogsForDay } from '@/lib/firestore/sessionLogs';
 import { getUserPreferences } from '@/lib/firestore/userPreferences';
-import { GlassCard } from '@/components/ui';
+import {
+  saveSessionState,
+  clearSessionState,
+  loadSessionState,
+  calculateEffectiveSecondsRemaining,
+  type PersistedSessionState,
+} from '@/lib/focus/sessionPersistence';
+import { GlassCard, Button } from '@/components/ui';
 import type { FocusSegment } from '@/lib/types/focusPlan';
 import type { UserPreferences } from '@/lib/firestore/userPreferences';
+import type { PomodoroTimerState } from '@/lib/focus/usePomodoroTimer';
 
 interface PomodoroTimerProps {
   userId: string;
@@ -17,6 +25,8 @@ interface PomodoroTimerProps {
   dayIndex: number;
   date: string;
 }
+
+type ResumeDecision = 'pending' | 'resume' | 'restart' | null;
 
 export function PomodoroTimer({
   userId,
@@ -30,30 +40,138 @@ export function PomodoroTimer({
   const [isLoggingError, setIsLoggingError] = useState(false);
   const [loggingErrorMessage, setLoggingErrorMessage] = useState<string>('');
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
-  const segmentStartTimesRef = useRef<Map<number, Date>>(new Map());
-  const lastLoggedSegmentRef = useRef<number>(-1);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [loggedSegmentIndices, setLoggedSegmentIndices] = useState<Set<number>>(new Set());
+  const [resumeDecision, setResumeDecision] = useState<ResumeDecision>(null);
+  const [persistedState, setPersistedState] = useState<PersistedSessionState | null>(null);
+  const [initialTimerOptions, setInitialTimerOptions] = useState<{
+    initialSegmentIndex: number;
+    initialSecondsRemaining: number;
+    initialIsRunning: boolean;
+  } | null>(null);
 
+  const segmentStartTimesRef = useRef<Map<number, Date>>(new Map());
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const isInitializedRef = useRef(false);
+
+  // Load preferences and already-logged segments
   useEffect(() => {
-    async function loadPreferences() {
+    async function loadInitialData() {
       try {
         const prefs = await getUserPreferences(userId);
         setPreferences(prefs);
       } catch (error) {
         console.error('Error loading preferences:', error);
       }
+
+      try {
+        const existingLogs = await getSessionLogsForDay(planId, dayId);
+        const loggedIndices = new Set(existingLogs.map((log) => log.segmentIndex));
+        setLoggedSegmentIndices(loggedIndices);
+      } catch (error) {
+        console.error('Error loading session logs:', error);
+      }
     }
 
-    loadPreferences();
+    loadInitialData();
 
     // Create audio element for completion sound
     if (typeof window !== 'undefined') {
       audioRef.current = new Audio();
-      // Simple notification sound using data URI (a pleasant chime)
       audioRef.current.src =
         'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuAzPLZiTYIG2m98OGpTAoQU6rm8LNlHQU2kdry0H4sBS2Aycy93ogzBxdqvfDnr1YJDVW06e+wXhwE';
     }
-  }, [userId]);
+  }, [userId, planId, dayId]);
+
+  // Check for persisted state on mount
+  useEffect(() => {
+    if (isInitializedRef.current) return;
+    isInitializedRef.current = true;
+
+    const persisted = loadSessionState(userId);
+    
+    if (!persisted) {
+      // No persisted state, start fresh
+      setResumeDecision(null);
+      setInitialTimerOptions({
+        initialSegmentIndex: 0,
+        initialSecondsRemaining: segments[0]?.minutes * 60 || 0,
+        initialIsRunning: false,
+      });
+      return;
+    }
+
+    // Validate that persisted state matches current context
+    const isMatchingPlan = persisted.planId === planId;
+    const isMatchingDay = persisted.dayId === dayId;
+    const isMatchingDate = persisted.date === date;
+
+    if (!isMatchingPlan || !isMatchingDay || !isMatchingDate) {
+      console.log('Persisted state is stale (different plan/day/date), clearing');
+      clearSessionState(userId);
+      setResumeDecision(null);
+      setInitialTimerOptions({
+        initialSegmentIndex: 0,
+        initialSecondsRemaining: segments[0]?.minutes * 60 || 0,
+        initialIsRunning: false,
+      });
+      return;
+    }
+
+    // Calculate effective seconds remaining
+    const effectiveSeconds = calculateEffectiveSecondsRemaining(persisted);
+
+    // Check if segment index is valid
+    if (persisted.segmentIndex >= segments.length) {
+      console.log('Persisted segment index out of range, clearing');
+      clearSessionState(userId);
+      setResumeDecision(null);
+      setInitialTimerOptions({
+        initialSegmentIndex: 0,
+        initialSecondsRemaining: segments[0]?.minutes * 60 || 0,
+        initialIsRunning: false,
+      });
+      return;
+    }
+
+    // TODO: More advanced heuristic - if effectiveSeconds is very negative,
+    // auto-advance segments for better UX
+    if (effectiveSeconds <= 0) {
+      console.log('Segment time expired while away, treating as completed but not logged');
+      // For v1, show resume dialog but with 0 seconds
+      setPersistedState({ ...persisted, secondsRemaining: 0 });
+      setResumeDecision('pending');
+      return;
+    }
+
+    // Valid persisted state found
+    setPersistedState(persisted);
+    setResumeDecision('pending');
+  }, [userId, planId, dayId, date, segments]);
+
+  // Handle resume decision
+  const handleResume = () => {
+    if (!persistedState) return;
+
+    const effectiveSeconds = calculateEffectiveSecondsRemaining(persistedState);
+
+    setInitialTimerOptions({
+      initialSegmentIndex: persistedState.segmentIndex,
+      initialSecondsRemaining: effectiveSeconds,
+      initialIsRunning: false, // Start paused for better UX
+    });
+    setResumeDecision('resume');
+  };
+
+  const handleRestart = () => {
+    clearSessionState(userId);
+    setPersistedState(null);
+    setInitialTimerOptions({
+      initialSegmentIndex: 0,
+      initialSecondsRemaining: segments[0]?.minutes * 60 || 0,
+      initialIsRunning: false,
+    });
+    setResumeDecision('restart');
+  };
 
   const playCompletionSound = () => {
     if (preferences?.soundEnabled && audioRef.current) {
@@ -69,14 +187,13 @@ export function PomodoroTimer({
   };
 
   const handleSegmentComplete = async (segmentIndex: number, segment: FocusSegment) => {
-    // Play sound for any segment completion
     playCompletionSound();
 
     // Only log work segments
     if (segment.type !== 'work') return;
 
-    // Guard against multiple logs for the same segment
-    if (lastLoggedSegmentRef.current === segmentIndex) {
+    // Check if already logged (prevent double-logging on resume)
+    if (loggedSegmentIndices.has(segmentIndex)) {
       console.warn('Segment already logged, skipping:', segmentIndex);
       return;
     }
@@ -90,7 +207,6 @@ export function PomodoroTimer({
     const endTime = new Date();
     const actualSeconds = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
 
-    // Validate that actualSeconds is reasonable (not negative or absurdly large)
     if (actualSeconds < 0 || actualSeconds > segment.minutes * 120) {
       console.error('Invalid actual seconds:', actualSeconds, 'for segment:', segmentIndex);
       setIsLoggingError(true);
@@ -111,8 +227,8 @@ export function PomodoroTimer({
         endedAt: endTime,
       });
 
-      // Mark this segment as logged
-      lastLoggedSegmentRef.current = segmentIndex;
+      // Mark as logged
+      setLoggedSegmentIndices((prev) => new Set([...prev, segmentIndex]));
       segmentStartTimesRef.current.delete(segmentIndex);
       setIsLoggingError(false);
       setLoggingErrorMessage('');
@@ -127,11 +243,168 @@ export function PomodoroTimer({
     }
   };
 
+  const handleStateChange = (state: PomodoroTimerState) => {
+    // Save state to localStorage for persistence
+    const currentSegment = segments[state.currentIndex];
+    
+    if (!currentSegment) return;
+
+    // Only save if not finished
+    if (state.isFinished) {
+      clearSessionState(userId);
+      return;
+    }
+
+    const persistState: PersistedSessionState = {
+      userId,
+      planId,
+      dayId,
+      date,
+      segmentIndex: state.currentIndex,
+      segmentType: currentSegment.type,
+      segmentPlannedMinutes: currentSegment.minutes,
+      secondsRemaining: state.secondsRemaining,
+      isRunning: state.isRunning,
+      lastUpdatedAt: Date.now(),
+    };
+
+    saveSessionState(persistState);
+  };
+
+  // Show resume/restart dialog if needed
+  if (resumeDecision === 'pending' && persistedState) {
+    const effectiveSeconds = calculateEffectiveSecondsRemaining(persistedState);
+    const formatTime = (seconds: number): string => {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    return (
+      <GlassCard>
+        <div className="text-center">
+          <div className="mb-4 flex justify-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/20">
+              <svg
+                className="h-8 w-8 text-blue-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+          </div>
+          
+          <h2 className="mb-2 text-2xl font-bold text-white">
+            Session in progress
+          </h2>
+          
+          <p className="mb-6 text-white/70">
+            You have an active session for today.
+          </p>
+
+          <div className="mb-6 rounded-xl bg-white/5 p-4">
+            <div className="text-sm text-white/60 mb-1">Current segment</div>
+            <div className="text-lg font-semibold text-white mb-2">
+              {persistedState.segmentType === 'work' ? 'Work session' : 'Break time'} •{' '}
+              Session {persistedState.segmentIndex + 1} of {segments.length}
+            </div>
+            {effectiveSeconds > 0 && (
+              <>
+                <div className="text-sm text-white/60 mb-1">Time remaining</div>
+                <div className="text-3xl font-bold text-blue-300">
+                  {formatTime(effectiveSeconds)}
+                </div>
+              </>
+            )}
+            {effectiveSeconds <= 0 && (
+              <div className="text-sm text-yellow-400">
+                Time expired while away
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-center gap-3">
+            <Button onClick={handleResume}>Resume</Button>
+            <Button variant="secondary" onClick={handleRestart}>
+              Restart today
+            </Button>
+          </div>
+        </div>
+      </GlassCard>
+    );
+  }
+
+  // Wait for initialization
+  if (!initialTimerOptions) {
+    return (
+      <GlassCard>
+        <div className="text-center py-8">
+          <div className="text-white/60">Loading timer...</div>
+        </div>
+      </GlassCard>
+    );
+  }
+
+  // Render main timer
+  return (
+    <TimerDisplay
+      userId={userId}
+      planId={planId}
+      dayId={dayId}
+      segments={segments}
+      dailyTargetMinutes={dailyTargetMinutes}
+      initialTimerOptions={initialTimerOptions}
+      onWorkSegmentStart={handleWorkSegmentStart}
+      onSegmentComplete={handleSegmentComplete}
+      onStateChange={handleStateChange}
+      isLoggingError={isLoggingError}
+      loggingErrorMessage={loggingErrorMessage}
+    />
+  );
+}
+
+interface TimerDisplayProps {
+  userId: string;
+  planId: string;
+  dayId: string;
+  segments: FocusSegment[];
+  dailyTargetMinutes: number;
+  initialTimerOptions: {
+    initialSegmentIndex: number;
+    initialSecondsRemaining: number;
+    initialIsRunning: boolean;
+  };
+  onWorkSegmentStart: (segmentIndex: number, segment: FocusSegment) => void;
+  onSegmentComplete: (segmentIndex: number, segment: FocusSegment) => void;
+  onStateChange: (state: PomodoroTimerState) => void;
+  isLoggingError: boolean;
+  loggingErrorMessage: string;
+}
+
+function TimerDisplay({
+  userId,
+  segments,
+  initialTimerOptions,
+  onWorkSegmentStart,
+  onSegmentComplete,
+  onStateChange,
+  isLoggingError,
+  loggingErrorMessage,
+}: TimerDisplayProps) {
   const { state, controls } = usePomodoroTimer({
     segments,
     autoStartFirstWorkSegment: false,
-    onSegmentComplete: handleSegmentComplete,
-    onWorkSegmentStart: handleWorkSegmentStart,
+    onSegmentComplete,
+    onWorkSegmentStart,
+    onStateChange,
+    ...initialTimerOptions,
   });
 
   const formatTime = (seconds: number): string => {

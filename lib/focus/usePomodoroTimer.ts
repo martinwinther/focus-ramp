@@ -12,6 +12,10 @@ export interface UsePomodoroTimerOptions {
   autoStartFirstWorkSegment?: boolean;
   onSegmentComplete?: (segmentIndex: number, segment: FocusSegment) => void;
   onWorkSegmentStart?: (segmentIndex: number, segment: FocusSegment) => void;
+  initialSegmentIndex?: number;
+  initialSecondsRemaining?: number;
+  initialIsRunning?: boolean;
+  onStateChange?: (state: PomodoroTimerState) => void;
 }
 
 export interface PomodoroTimerState {
@@ -35,13 +39,26 @@ export interface PomodoroTimerControls {
 export function usePomodoroTimer(
   options: UsePomodoroTimerOptions
 ): { state: PomodoroTimerState; controls: PomodoroTimerControls } {
-  const { segments, autoStartFirstWorkSegment = false, onSegmentComplete, onWorkSegmentStart } = options;
+  const {
+    segments,
+    autoStartFirstWorkSegment = false,
+    onSegmentComplete,
+    onWorkSegmentStart,
+    initialSegmentIndex = 0,
+    initialSecondsRemaining,
+    initialIsRunning = false,
+    onStateChange,
+  } = options;
 
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(initialSegmentIndex);
   const [secondsRemaining, setSecondsRemaining] = useState(
-    segments.length > 0 ? segments[0].minutes * 60 : 0
+    initialSecondsRemaining !== undefined
+      ? initialSecondsRemaining
+      : segments.length > 0
+      ? segments[initialSegmentIndex]?.minutes * 60 || 0
+      : 0
   );
-  const [isRunning, setIsRunning] = useState(false);
+  const [isRunning, setIsRunning] = useState(initialIsRunning);
   const [isFinished, setIsFinished] = useState(false);
   const [completedSegments, setCompletedSegments] = useState<number[]>([]);
 
@@ -50,9 +67,7 @@ export function usePomodoroTimer(
 
   const currentSegment = segments[currentIndex] || null;
 
-  // Clean up interval on unmount or component navigation
-  // TODO: In a future enhancement, persist mid-segment state to allow
-  // resuming if user navigates away during an active session
+  // Clean up interval on unmount
   useEffect(() => {
     return () => {
       if (intervalRef.current) {
@@ -61,6 +76,20 @@ export function usePomodoroTimer(
       }
     };
   }, []);
+
+  // Notify parent component of state changes for persistence
+  useEffect(() => {
+    if (onStateChange) {
+      onStateChange({
+        currentIndex,
+        currentSegment,
+        secondsRemaining,
+        isRunning,
+        isFinished,
+        completedSegments,
+      });
+    }
+  }, [currentIndex, secondsRemaining, isRunning, isFinished, completedSegments, currentSegment, onStateChange]);
 
   // Handle timer tick
   useEffect(() => {
