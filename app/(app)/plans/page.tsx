@@ -237,19 +237,33 @@ export default function PlansPage() {
       )}
 
       {activePlan && (
-        <GlassCard>
+        <GlassCard hover>
           <div className="mb-4 flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-white">Active Plan</h2>
-                <Badge variant="success">Active</Badge>
+            <Link
+              href={`/plans/${activePlan.id}`}
+              className="flex-1 cursor-pointer"
+              onClick={(e) => {
+                // Prevent navigation if clicking the button
+                if ((e.target as HTMLElement).closest('button')) {
+                  e.preventDefault();
+                }
+              }}
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-bold text-white">Active Plan</h2>
+                  <Badge variant="success">Active</Badge>
+                </div>
+                <p className="mt-1 text-sm text-white/60">
+                  Started {formatDate(activePlan.startDate)}
+                </p>
               </div>
-              <p className="mt-1 text-sm text-white/60">
-                Started {formatDate(activePlan.startDate)}
-              </p>
-            </div>
+            </Link>
             <button
-              onClick={() => handleMarkAsCompleted(activePlan.id!)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMarkAsCompleted(activePlan.id!);
+              }}
               disabled={completingPlanId === activePlan.id}
               className="rounded-lg px-3 py-1.5 text-sm text-white/80 hover:bg-white/10 disabled:opacity-50 transition-colors"
             >
@@ -257,39 +271,46 @@ export default function PlansPage() {
             </button>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-            <div className="rounded-xl bg-white/5 p-4">
-              <div className="text-sm text-white/60">Target</div>
-              <div className="mt-1 text-2xl font-bold text-white">
-                {activePlan.targetDailyMinutes} min
-              </div>
-            </div>
-
-            <div className="rounded-xl bg-white/5 p-4">
-              <div className="text-sm text-white/60">Training days</div>
-              <div className="mt-1 text-lg font-semibold text-white">
-                {formatTrainingDays(activePlan.trainingDaysPerWeek)}
-              </div>
-            </div>
-
-            {activePlan.endDate && (
+          <Link href={`/plans/${activePlan.id}`} className="block">
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
               <div className="rounded-xl bg-white/5 p-4">
-                <div className="text-sm text-white/60">End date</div>
-                <div className="mt-1 text-lg font-semibold text-white">
-                  {formatDate(activePlan.endDate)}
+                <div className="text-sm text-white/60">Target</div>
+                <div className="mt-1 text-2xl font-bold text-white">
+                  {activePlan.targetDailyMinutes} min
                 </div>
               </div>
-            )}
 
-            {activePlan.trainingDaysCount && (
               <div className="rounded-xl bg-white/5 p-4">
                 <div className="text-sm text-white/60">Training days</div>
-                <div className="mt-1 text-2xl font-bold text-white">
-                  {activePlan.trainingDaysCount}
+                <div className="mt-1 text-lg font-semibold text-white">
+                  {formatTrainingDays(activePlan.trainingDaysPerWeek)}
                 </div>
               </div>
-            )}
-          </div>
+
+              {activePlan.endDate && (
+                <div className="rounded-xl bg-white/5 p-4">
+                  <div className="text-sm text-white/60">End date</div>
+                  <div className="mt-1 text-lg font-semibold text-white">
+                    {formatDate(activePlan.endDate)}
+                  </div>
+                </div>
+              )}
+
+              {activePlan.trainingDaysCount && (
+                <div className="rounded-xl bg-white/5 p-4">
+                  <div className="text-sm text-white/60">Training days</div>
+                  <div className="mt-1 text-2xl font-bold text-white">
+                    {activePlan.trainingDaysCount}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="mt-4 flex justify-end">
+              <span className="text-sm text-white/60 hover:text-white/80 transition-colors">
+                View details →
+              </span>
+            </div>
+          </Link>
         </GlassCard>
       )}
 
@@ -300,61 +321,80 @@ export default function PlansPage() {
 
         <div className="space-y-4">
           {plans.map((plan) => (
-            <GlassCard key={plan.id}>
+            <GlassCard key={plan.id} hover>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <Badge variant={getStatusBadgeVariant(plan.status)}>
-                      {plan.status.charAt(0).toUpperCase() + plan.status.slice(1)}
-                    </Badge>
-                    {plan.status === 'completed' && plan.completedAt ? (
-                      <span className="text-sm text-white/60">
-                        Completed {formatDate(plan.completedAt.toDate().toISOString().split('T')[0])}
-                      </span>
-                    ) : (
-                      <span className="text-sm text-white/60">
-                        Started {formatDate(plan.startDate)}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                    <div>
-                      <div className="text-xs text-white/50">Target</div>
-                      <div className="text-sm font-semibold text-white">
-                        {plan.targetDailyMinutes} min/day
-                      </div>
+                <Link
+                  href={`/plans/${plan.id}`}
+                  className="flex-1 cursor-pointer"
+                  onClick={(e) => {
+                    // Prevent navigation if clicking action buttons
+                    if ((e.target as HTMLElement).closest('button')) {
+                      e.preventDefault();
+                    }
+                  }}
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={getStatusBadgeVariant(plan.status)}>
+                        {plan.status.charAt(0).toUpperCase() + plan.status.slice(1)}
+                      </Badge>
+                      {plan.status === 'completed' && plan.completedAt ? (
+                        <span className="text-sm text-white/60">
+                          Completed {formatDate(plan.completedAt.toDate().toISOString().split('T')[0])}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-white/60">
+                          Started {formatDate(plan.startDate)}
+                        </span>
+                      )}
                     </div>
 
-                    <div>
-                      <div className="text-xs text-white/50">Training days</div>
-                      <div className="text-sm font-semibold text-white">
-                        {formatTrainingDays(plan.trainingDaysPerWeek)}
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                      <div>
+                        <div className="text-xs text-white/50">Target</div>
+                        <div className="text-sm font-semibold text-white">
+                          {plan.targetDailyMinutes} min/day
+                        </div>
                       </div>
-                    </div>
 
-                    {plan.endDate ? (
                       <div>
-                        <div className="text-xs text-white/50">End date</div>
+                        <div className="text-xs text-white/50">Training days</div>
                         <div className="text-sm font-semibold text-white">
-                          {formatDate(plan.endDate)}
+                          {formatTrainingDays(plan.trainingDaysPerWeek)}
                         </div>
                       </div>
-                    ) : plan.trainingDaysCount ? (
-                      <div>
-                        <div className="text-xs text-white/50">Duration</div>
-                        <div className="text-sm font-semibold text-white">
-                          {plan.trainingDaysCount} days
+
+                      {plan.endDate ? (
+                        <div>
+                          <div className="text-xs text-white/50">End date</div>
+                          <div className="text-sm font-semibold text-white">
+                            {formatDate(plan.endDate)}
+                          </div>
                         </div>
-                      </div>
-                    ) : null}
+                      ) : plan.trainingDaysCount ? (
+                        <div>
+                          <div className="text-xs text-white/50">Duration</div>
+                          <div className="text-sm font-semibold text-white">
+                            {plan.trainingDaysCount} days
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
+                  <div className="mt-3">
+                    <span className="text-sm text-white/60 hover:text-white/80 transition-colors">
+                      View details →
+                    </span>
+                  </div>
+                </Link>
 
                 <div className="flex gap-2">
                   {plan.status === 'active' && (
                     <button
-                      onClick={() => handleMarkAsCompleted(plan.id!)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMarkAsCompleted(plan.id!);
+                      }}
                       disabled={completingPlanId === plan.id}
                       className="btn-secondary text-sm disabled:opacity-50"
                     >
@@ -363,7 +403,10 @@ export default function PlansPage() {
                   )}
                   {plan.status === 'paused' && (
                     <button
-                      onClick={() => handleResumePlan(plan.id!)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleResumePlan(plan.id!);
+                      }}
                       disabled={resumingPlanId === plan.id}
                       className="btn-primary text-sm disabled:opacity-50"
                     >

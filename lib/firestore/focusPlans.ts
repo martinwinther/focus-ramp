@@ -6,6 +6,7 @@ import {
   orderBy,
   limit,
   getDocs,
+  getDoc,
   doc,
   updateDoc,
   Timestamp,
@@ -188,6 +189,42 @@ export async function getAllPlansForUser(
   } catch (error) {
     console.error('Error fetching all plans:', error);
     throw new Error('Failed to load your plans. Please try again.');
+  }
+}
+
+export async function getFocusPlanById(
+  userId: string,
+  planId: string
+): Promise<FocusPlan | null> {
+  try {
+    const db = await getFirebaseFirestore();
+    const planRef = doc(db, FOCUS_PLANS_COLLECTION, planId);
+    const planDoc = await getDoc(planRef);
+
+    if (!planDoc.exists()) {
+      return null;
+    }
+
+    const data = planDoc.data();
+
+    // Validate that the plan belongs to the user
+    if (data.userId !== userId) {
+      return null;
+    }
+
+    // Runtime validation: ensure required fields exist
+    if (!data.targetDailyMinutes || !data.trainingDaysPerWeek) {
+      console.error('Invalid plan data:', data);
+      return null;
+    }
+
+    return {
+      id: planDoc.id,
+      ...data,
+    } as FocusPlan;
+  } catch (error) {
+    console.error('Error fetching focus plan by ID:', error);
+    throw new Error('Failed to load plan. Please try again.');
   }
 }
 
