@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
+import { canUseNotifications, requestNotificationPermission } from '@/lib/focus/notifications';
 import {
   getActiveFocusPlanForUser,
   pauseFocusPlan,
@@ -30,6 +31,18 @@ export default function SettingsPage() {
   const [scheduleError, setScheduleError] = useState<string>('');
   const [selectedTrainingDays, setSelectedTrainingDays] = useState<TrainingDayOfWeek[]>([]);
   const [dayCount, setDayCount] = useState<{ completed: number; total: number } | null>(null);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const [notificationsSupported, setNotificationsSupported] = useState(true);
+
+  useEffect(() => {
+    // Check notification support
+    const supported = canUseNotifications();
+    setNotificationsSupported(supported);
+    
+    if (supported && typeof window !== 'undefined') {
+      setNotificationPermission(Notification.permission);
+    }
+  }, []);
 
   useEffect(() => {
     async function loadData() {
@@ -73,6 +86,17 @@ export default function SettingsPage() {
     value: boolean
   ) => {
     if (!user || !preferences) return;
+
+    // Handle notification permission request
+    if (key === 'notificationsEnabled' && value) {
+      const permission = await requestNotificationPermission();
+      setNotificationPermission(permission);
+      
+      if (permission !== 'granted') {
+        // Don't save if permission was denied
+        return;
+      }
+    }
 
     setSaving(true);
     try {
@@ -396,7 +420,7 @@ export default function SettingsPage() {
               <div className="flex-1">
                 <div className="font-medium text-white">Sound notifications</div>
                 <div className="mt-1 text-sm text-white/60">
-                  Play a soft sound when a work session ends
+                  Play a soft sound when a session finishes
                 </div>
               </div>
               <button
@@ -412,6 +436,43 @@ export default function SettingsPage() {
                 <span
                   className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow-md transition-transform ${
                     preferences.soundEnabled ? 'translate-x-7' : 'translate-x-1'
+                  }`}
+                ></span>
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between rounded-xl bg-white/5 p-4">
+              <div className="flex-1">
+                <div className="font-medium text-white">Desktop notifications</div>
+                <div className="mt-1 text-sm text-white/60">
+                  Show a notification when a focus or break session ends
+                </div>
+                {!notificationsSupported && (
+                  <div className="mt-2 text-xs text-red-300">
+                    Notifications are not supported in this browser
+                  </div>
+                )}
+                {notificationsSupported && notificationPermission === 'denied' && preferences.notificationsEnabled && (
+                  <div className="mt-2 text-xs text-yellow-300">
+                    Notifications are blocked in your browser settings. You can enable them in your browser and then try again.
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() =>
+                  handlePreferenceChange('notificationsEnabled', !preferences.notificationsEnabled)
+                }
+                disabled={saving || !notificationsSupported}
+                className={`relative h-8 w-14 rounded-full transition-colors ${
+                  preferences.notificationsEnabled && notificationsSupported ? 'bg-green-500/80' : 'bg-white/20'
+                } ${!notificationsSupported ? 'opacity-50 cursor-not-allowed' : ''}`}
+                aria-label="Toggle desktop notifications"
+              >
+                <span
+                  className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow-md transition-transform ${
+                    preferences.notificationsEnabled && notificationsSupported
+                      ? 'translate-x-7'
+                      : 'translate-x-1'
                   }`}
                 ></span>
               </button>

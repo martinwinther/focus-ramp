@@ -4,6 +4,7 @@ import { firebaseFirestore } from '../firebase/client';
 export interface UserPreferences {
   soundEnabled: boolean;
   autoStartNextSegment: boolean;
+  notificationsEnabled: boolean;
   userId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -12,6 +13,7 @@ export interface UserPreferences {
 const defaultPreferences: Omit<UserPreferences, 'userId' | 'createdAt' | 'updatedAt'> = {
   soundEnabled: true,
   autoStartNextSegment: false,
+  notificationsEnabled: false,
 };
 
 export async function getUserPreferences(userId: string): Promise<UserPreferences> {

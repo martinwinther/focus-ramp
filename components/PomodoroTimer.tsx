@@ -5,6 +5,11 @@ import { usePomodoroTimer } from '@/lib/focus/usePomodoroTimer';
 import { logCompletedWorkSegment, getSessionLogsForDay } from '@/lib/firestore/sessionLogs';
 import { getUserPreferences } from '@/lib/firestore/userPreferences';
 import {
+  canUseNotifications,
+  requestNotificationPermission,
+  showSessionNotification,
+} from '@/lib/focus/notifications';
+import {
   saveSessionState,
   clearSessionState,
   loadSessionState,
@@ -59,6 +64,12 @@ export function PomodoroTimer({
       try {
         const prefs = await getUserPreferences(userId);
         setPreferences(prefs);
+
+        // Request notification permission if notifications are enabled
+        if (prefs.notificationsEnabled && canUseNotifications()) {
+          const permission = await requestNotificationPermission();
+          console.log('Notification permission:', permission);
+        }
       } catch (error) {
         console.error('Error loading preferences:', error);
       }
@@ -182,12 +193,57 @@ export function PomodoroTimer({
     }
   };
 
+  const showSegmentNotification = (segmentType: 'work' | 'break', isLastSegment: boolean) => {
+    // Only show notification if:
+    // 1. User has enabled notifications
+    // 2. Browser permission is granted
+    // 3. Tab is not in focus (document is hidden)
+    if (
+      !preferences?.notificationsEnabled ||
+      !canUseNotifications() ||
+      typeof document === 'undefined' ||
+      document.visibilityState === 'visible'
+    ) {
+      return;
+    }
+
+    if (Notification.permission !== 'granted') {
+      return;
+    }
+
+    // Determine notification message based on what just finished
+    if (isLastSegment) {
+      showSessionNotification({
+        title: "Today's training done",
+        body: "You've completed today's focus plan.",
+      });
+    } else if (segmentType === 'work') {
+      // Work segment just finished, about to enter break
+      showSessionNotification({
+        title: 'Work session complete',
+        body: 'Take a 5-minute break.',
+      });
+    } else {
+      // Break segment just finished, about to enter work
+      showSessionNotification({
+        title: 'Break over',
+        body: 'Next focus session is ready.',
+      });
+    }
+  };
+
   const handleWorkSegmentStart = (segmentIndex: number, segment: FocusSegment) => {
     segmentStartTimesRef.current.set(segmentIndex, new Date());
   };
 
   const handleSegmentComplete = async (segmentIndex: number, segment: FocusSegment) => {
     playCompletionSound();
+
+    // Check if this is the last segment
+    const isLastSegment = segmentIndex === segments.length - 1;
+
+    // Show notification for segment completion
+    showSegmentNotification(segment.type, isLastSegment);
 
     // Only log work segments
     if (segment.type !== 'work') return;
@@ -487,11 +543,11 @@ function TimerDisplay({
   return (
     <div className="space-y-6">
       {/* Main Timer Display */}
-      <GlassCard className="text-center">
+      <GlassCard className="text-center transition-all duration-300 hover:scale-[1.01]">
         {/* Session Type Label */}
         <div className="mb-4">
           <div
-            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
               isWorkSegment
                 ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
                 : 'bg-green-500/20 text-green-300 border border-green-500/30'
@@ -537,7 +593,7 @@ function TimerDisplay({
 
         {/* Timer Display */}
         <div
-          className={`mb-6 text-8xl font-bold tabular-nums transition-colors ${
+          className={`mb-6 text-8xl font-bold tabular-nums transition-colors duration-300 ${
             isWorkSegment ? 'text-blue-300' : 'text-green-300'
           }`}
         >
@@ -579,7 +635,7 @@ function TimerDisplay({
                     ? controls.start
                     : controls.resume
                 }
-                className="btn-primary"
+                className="btn-primary transition-all duration-150 hover:scale-105 hover:shadow-lg"
                 aria-label={
                   state.currentIndex === 0 &&
                   state.secondsRemaining === segments[0]?.minutes * 60
@@ -598,7 +654,7 @@ function TimerDisplay({
             ) : (
               <button
                 onClick={controls.pause}
-                className="btn-primary"
+                className="btn-primary transition-all duration-150 hover:scale-105 hover:shadow-lg"
                 aria-label="Pause session"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -610,7 +666,7 @@ function TimerDisplay({
 
             <button
               onClick={controls.skipSegment}
-              className="btn-secondary"
+              className="btn-secondary transition-all duration-150 hover:scale-105"
               aria-label="Skip to next session"
             >
               Skip
@@ -618,7 +674,7 @@ function TimerDisplay({
 
             <button
               onClick={controls.reset}
-              className="btn-ghost"
+              className="btn-ghost transition-all duration-150 hover:scale-105"
               aria-label="Reset timer"
             >
               Reset
@@ -649,7 +705,7 @@ function TimerDisplay({
             <p className="mb-6 text-lg text-white/70">
               Great work today. You completed {totalWorkMinutes} minutes of focused work.
             </p>
-            <button onClick={controls.reset} className="btn-secondary">
+            <button onClick={controls.reset} className="btn-secondary transition-all duration-150 hover:scale-105">
               Review sessions
             </button>
           </div>
@@ -696,12 +752,12 @@ function TimerDisplay({
             return (
               <div
                 key={index}
-                className={`flex items-center justify-between rounded-xl p-4 transition-all ${
+                className={`flex items-center justify-between rounded-xl p-4 transition-all duration-300 ${
                   isActive
-                    ? 'bg-white/20 ring-2 ring-white/30 scale-[1.02]'
+                    ? 'bg-white/20 ring-2 ring-white/30 scale-[1.02] animate-pulse'
                     : isCompleted
                     ? 'bg-white/5 opacity-60'
-                    : 'bg-white/5 hover:bg-white/10'
+                    : 'bg-white/5 hover:bg-white/10 hover:scale-[1.01]'
                 }`}
               >
                 <div className="flex items-center gap-3">
