@@ -97,7 +97,7 @@ export default function LandingPage() {
                 </h3>
                 <p className="text-white/80">
                   Choose your target focus duration, end date, and training days per week. 
-                  We'll calculate the perfect ramp for you.
+                  We&apos;ll calculate the perfect ramp for you.
                 </p>
               </div>
 
@@ -164,7 +164,7 @@ export default function LandingPage() {
         <section className="px-4 py-16">
           <div className="mx-auto max-w-4xl">
             <h2 className="mb-12 text-center text-3xl font-bold text-white md:text-4xl">
-              Who it's for
+              Who it&apos;s for
             </h2>
 
             <div className="glass-card">

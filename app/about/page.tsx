@@ -27,7 +27,7 @@ export default function AboutPage() {
                 <p className="leading-relaxed">
                   Deep work is hard. Jumping from scattered attention to sustained focus of 2–3 hours 
                   feels impossible. Most productivity advice expects you to flip a switch and suddenly 
-                  become a focus machine. That's not how attention works.
+                  become a focus machine. That&apos;s not how attention works.
                 </p>
               </div>
 
@@ -46,7 +46,7 @@ export default function AboutPage() {
                 <p className="leading-relaxed">
                   We believe in gentle progression over aggressive ambition. No productivity guilt. 
                   No shame for starting small. Focus Ramp is designed to meet you where you are and help 
-                  you grow at a sustainable pace. The goal isn't perfection—it's progress.
+                  you grow at a sustainable pace. The goal isn&apos;t perfection—it&apos;s progress.
                 </p>
               </div>
             </div>

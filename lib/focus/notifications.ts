@@ -27,8 +27,7 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 export interface SessionNotificationOptions {
   title: string;
   body?: string;
-  // TODO: Add icon support (e.g., app icon or custom session icons)
-  // TODO: Add user-adjustable message templates
+  // Future enhancement: Add icon support and user-adjustable message templates
 }
 
 export function showSessionNotification(options: SessionNotificationOptions): void {

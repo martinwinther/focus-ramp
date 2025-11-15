@@ -52,7 +52,7 @@ export default function PrivacyPage() {
                 <h2 className="mb-3 text-2xl font-semibold text-white">Infrastructure</h2>
                 <p className="leading-relaxed">
                   Focus Ramp uses Firebase (by Google) for authentication and data storage. Your data is stored 
-                  in secure, encrypted Firestore databases. Firebase's own privacy policy and security practices apply.
+                  in secure, encrypted Firestore databases. Firebase&apos;s own privacy policy and security practices apply.
                 </p>
               </div>
 

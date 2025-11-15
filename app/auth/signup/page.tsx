@@ -68,7 +68,7 @@ export default function SignUpPage() {
             Check your email
           </h1>
           <p className="mb-6 text-center text-white/80">
-            We've sent a verification link to <strong>{email}</strong>.
+            We&apos;ve sent a verification link to <strong>{email}</strong>.
             Please check your inbox and click the link to verify your account.
           </p>
 

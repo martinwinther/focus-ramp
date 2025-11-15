@@ -119,18 +119,17 @@ focus-ramp/
 
 ## Current Status
 
-**Phase 1: Complete ✓**
-- Firebase Authentication (email/password with verification)
-- Firestore integration
-- Onboarding flow (goal configuration)
-- Basic plan creation and display
-- Protected routes
+**Ready for user testing** ✓
 
-**Phase 2: In Progress**
-- Daily ramp generator (TODO)
-- Pomodoro timer (TODO)
-- Session tracking (TODO)
-- History view (TODO)
+Core features complete:
+- Firebase Authentication (email/password with verification)
+- Firestore integration with security rules
+- Onboarding flow with goal configuration
+- Automatic ramp generator based on training schedule
+- Full Pomodoro timer with session persistence
+- Session tracking and logging
+- History view with streaks and progress
+- Settings management (pause/resume, preferences, schedule adjustment)
 
 ## Documentation
 

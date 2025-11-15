@@ -163,7 +163,7 @@ export default function OnboardingPage() {
           Create your focus plan
         </h1>
         <p className="mb-8 text-center text-white/80">
-          We'll slowly ramp up your daily focus time from a small start to your goal
+          We&apos;ll slowly ramp up your daily focus time from a small start to your goal
         </p>
 
         {error && (
@@ -334,7 +334,7 @@ export default function OnboardingPage() {
               </p>
             ) : (
               <p className="mt-2 text-xs text-white/60">
-                Choose which days you'll train (we recommend starting with weekdays)
+                Choose which days you&apos;ll train (we recommend starting with weekdays)
               </p>
             )}
           </div>

@@ -96,6 +96,7 @@ export async function getSessionLogsForDay(
  * Fetches and computes daily summaries for all days in a plan.
  * This performs N+1 queries (one for days, then one per day for logs).
  * Acceptable for v1, but could be optimized with batch queries or aggregation.
+ * Future enhancement: Consider batching queries for better performance with large plans.
  * 
  * @throws {Error} If fetching fails
  */
@@ -111,8 +112,7 @@ export async function getDailySummariesForPlan(
       return [];
     }
 
-    // TODO: Consider batching these queries for better performance
-    // For now, fetch logs for each day individually
+    // Fetch logs for each day individually
     const summariesPromises = focusDays.map(async (day) => {
       try {
         const logs = await getSessionLogsForDay(userId, planId, day.id || day.date);

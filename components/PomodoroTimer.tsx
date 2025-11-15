@@ -146,11 +146,10 @@ export function PomodoroTimer({
       return;
     }
 
-    // TODO: More advanced heuristic - if effectiveSeconds is very negative,
-    // auto-advance segments for better UX
+    // If segment time expired while away, show resume dialog with 0 seconds.
+    // Future enhancement: Could auto-advance segments if multiple have elapsed.
     if (effectiveSeconds <= 0) {
       console.log('Segment time expired while away, treating as completed but not logged');
-      // For v1, show resume dialog but with 0 seconds
       setPersistedState({ ...persisted, secondsRemaining: 0 });
       setResumeDecision('pending');
       return;
@@ -291,8 +290,8 @@ export function PomodoroTimer({
       setIsLoggingError(false);
       setLoggingErrorMessage('');
 
-      // If this is the last segment, mark the day as completed
-      // TODO: Could add more nuanced completion rules based on completion ratio (e.g. ≥80%)
+      // If this is the last segment, mark the day as completed.
+      // Future enhancement: Could use completion ratio thresholds (e.g., ≥80%) for partial credit.
       if (isLastSegment) {
         try {
           await markDayCompleted(userId, planId, dayId);
@@ -762,7 +761,7 @@ function TimerDisplay({
 
       {/* Segment List */}
       <GlassCard>
-        <h3 className="mb-4 text-lg font-semibold text-white">Today's sessions</h3>
+        <h3 className="mb-4 text-lg font-semibold text-white">Today&apos;s sessions</h3>
         <p className="mb-4 text-sm text-white/60">
           Work through each session at your own pace
         </p>

@@ -90,7 +90,7 @@ export default function HistoryPage() {
               </div>
             </div>
             <h2 className="mb-2 text-2xl font-bold text-white">
-              Couldn't load your history
+              Couldn&apos;t load your history
             </h2>
             <p className="mb-6 text-white/70">{error}</p>
             <div className="flex justify-center gap-3">
@@ -282,13 +282,13 @@ export default function HistoryPage() {
               </div>
             </div>
             <p className="mb-4 text-lg text-white/70">
-              You haven't started any training days yet
+              You haven&apos;t started any training days yet
             </p>
             <p className="mb-6 text-sm text-white/60">
               Complete your first work session to see your progress here
             </p>
             <Link href="/today">
-              <Button>Start today's training</Button>
+              <Button>Start today&apos;s training</Button>
             </Link>
           </div>
         ) : (
