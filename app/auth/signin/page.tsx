@@ -3,11 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  signInWithEmailAndPassword,
-  sendEmailVerification,
-} from 'firebase/auth';
-import { getFirebaseAuth } from '@/lib/firebase/client';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -26,6 +21,15 @@ export default function SignInPage() {
     setNeedsVerification(false);
 
     try {
+      // Dynamically import Firebase to avoid SSR issues
+      const [
+        { signInWithEmailAndPassword },
+        { getFirebaseAuth },
+      ] = await Promise.all([
+        import('firebase/auth'),
+        import('@/lib/firebase/client'),
+      ]);
+
       const auth = getFirebaseAuth();
       const userCredential = await signInWithEmailAndPassword(
         auth,
@@ -51,13 +55,21 @@ export default function SignInPage() {
   };
 
   const handleResendVerification = async () => {
-    const auth = getFirebaseAuth();
-    if (!auth.currentUser) return;
-
-    setResendLoading(true);
-    setResendSuccess(false);
-
     try {
+      const [
+        { sendEmailVerification },
+        { getFirebaseAuth },
+      ] = await Promise.all([
+        import('firebase/auth'),
+        import('@/lib/firebase/client'),
+      ]);
+
+      const auth = getFirebaseAuth();
+      if (!auth.currentUser) return;
+
+      setResendLoading(true);
+      setResendSuccess(false);
+
       await sendEmailVerification(auth.currentUser);
       setResendSuccess(true);
     } catch (err: unknown) {
