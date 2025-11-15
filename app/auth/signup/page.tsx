@@ -3,13 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  createUserWithEmailAndPassword,
-  sendEmailVerification,
-} from 'firebase/auth';
-import { getFirebaseAuth } from '@/lib/firebase/client';
 import { usePlanConfig } from '@/lib/hooks/usePlanConfig';
-import { createNewActivePlanForUser } from '@/lib/firestore/focusPlans';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -26,6 +20,17 @@ export default function SignUpPage() {
     setLoading(true);
 
     try {
+      // Dynamically import Firebase to avoid SSR issues
+      const [
+        { createUserWithEmailAndPassword, sendEmailVerification },
+        { getFirebaseAuth },
+        { createNewActivePlanForUser },
+      ] = await Promise.all([
+        import('firebase/auth'),
+        import('@/lib/firebase/client'),
+        import('@/lib/firestore/focusPlans'),
+      ]);
+
       const auth = getFirebaseAuth();
       const userCredential = await createUserWithEmailAndPassword(
         auth,

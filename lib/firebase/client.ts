@@ -27,10 +27,23 @@ function initializeFirebase() {
 
   try {
     if (getApps().length === 0) {
-      if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-        console.warn('Firebase configuration is missing. Please check your environment variables.');
+      // Check if config values are available
+      const hasApiKey = !!firebaseConfig.apiKey;
+      const hasProjectId = !!firebaseConfig.projectId;
+      
+      if (!hasApiKey || !hasProjectId) {
+        console.error('Firebase configuration is missing:', {
+          hasApiKey,
+          hasProjectId,
+          hasAuthDomain: !!firebaseConfig.authDomain,
+          hasStorageBucket: !!firebaseConfig.storageBucket,
+          hasMessagingSenderId: !!firebaseConfig.messagingSenderId,
+          hasAppId: !!firebaseConfig.appId,
+        });
+        console.error('Make sure NEXT_PUBLIC_FIREBASE_* environment variables are set in Cloudflare Workers.');
         return;
       }
+      
       firebaseApp = initializeApp(firebaseConfig);
     } else {
       firebaseApp = getApps()[0];
@@ -39,9 +52,14 @@ function initializeFirebase() {
     if (firebaseApp) {
       firebaseAuth = getAuth(firebaseApp);
       firebaseFirestore = getFirestore(firebaseApp);
+    } else {
+      console.error('Failed to create Firebase app instance');
     }
   } catch (error) {
     console.error('Error initializing Firebase:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', error.message, error.stack);
+    }
   }
 }
 
