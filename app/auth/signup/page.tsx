@@ -8,9 +8,12 @@ import {
   sendEmailVerification,
 } from 'firebase/auth';
 import { firebaseAuth } from '@/lib/firebase/client';
+import { usePlanConfig } from '@/lib/hooks/usePlanConfig';
+import { createNewActivePlanForUser } from '@/lib/firestore/focusPlans';
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { config, clearPlanConfig } = usePlanConfig();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,6 +31,18 @@ export default function SignUpPage() {
         email,
         password
       );
+
+      // Create focus plan if config exists from onboarding
+      if (config) {
+        try {
+          await createNewActivePlanForUser(userCredential.user.uid, config);
+          clearPlanConfig();
+        } catch (planError) {
+          console.error('Error creating plan:', planError);
+          // Continue to verification screen even if plan creation fails
+          // User can create plan later from /today or /onboarding
+        }
+      }
 
       await sendEmailVerification(userCredential.user);
       setVerificationSent(true);

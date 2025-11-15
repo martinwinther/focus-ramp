@@ -3,10 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
-import { usePlanConfig } from '@/lib/hooks/usePlanConfig';
 import {
   getActiveFocusPlanForUser,
-  createNewActivePlanForUser,
   getAllPlansForUser,
 } from '@/lib/firestore/focusPlans';
 import { getFocusDayForDate, getNextTrainingDay } from '@/lib/firestore/focusDays';
@@ -21,14 +19,12 @@ import { GlassCard, EmptyState, LoadingSpinner, Button } from '@/components/ui';
 
 export default function TodayPage() {
   const { user } = useAuth();
-  const { config, clearPlanConfig } = usePlanConfig();
   const [plan, setPlan] = useState<FocusPlan | null>(null);
   const [pausedPlan, setPausedPlan] = useState<FocusPlan | null>(null);
   const [completedPlan, setCompletedPlan] = useState<FocusPlan | null>(null);
   const [todayDay, setTodayDay] = useState<FocusDay | null>(null);
   const [nextDay, setNextDay] = useState<FocusDay | null>(null);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string>('');
   const [progressKey, setProgressKey] = useState(0);
 
@@ -66,7 +62,6 @@ export default function TodayPage() {
         setPlan(existingPlan);
         setPausedPlan(null);
         setCompletedPlan(null);
-        clearPlanConfig();
         
         const today = new Date().toISOString().split('T')[0];
         const dayData = await getFocusDayForDate(existingPlan.id!, today);
@@ -90,36 +85,6 @@ export default function TodayPage() {
           setPausedPlan(paused);
           setPlan(null);
           setCompletedPlan(null);
-        } else if (config) {
-          // Create new plan from config
-          setCreating(true);
-          try {
-            const newPlan = await createNewActivePlanForUser(user.uid, config);
-            setPlan(newPlan);
-            setCompletedPlan(null);
-            clearPlanConfig();
-            
-            if (newPlan) {
-              const today = new Date().toISOString().split('T')[0];
-              const dayData = await getFocusDayForDate(newPlan.id!, today);
-              setTodayDay(dayData);
-              
-              if (!dayData) {
-                const upcoming = await getNextTrainingDay(newPlan.id!);
-                setNextDay(upcoming);
-              }
-            }
-          } catch (planError: unknown) {
-            console.error('Error creating plan:', planError);
-            setError(
-              planError instanceof Error
-                ? planError.message
-                : 'Failed to create your plan. Please try again.'
-            );
-            clearPlanConfig();
-          } finally {
-            setCreating(false);
-          }
         }
       }
     } catch (err: unknown) {
@@ -136,7 +101,7 @@ export default function TodayPage() {
 
   useEffect(() => {
     loadPlan();
-  }, [user, config]);
+  }, [user]);
 
   useEffect(() => {
     if (!todayDay) return;
@@ -148,8 +113,8 @@ export default function TodayPage() {
     return () => clearInterval(interval);
   }, [todayDay]);
 
-  if (loading || creating) {
-    return <LoadingSpinner message={creating ? 'Creating your plan...' : 'Loading...'} />;
+  if (loading) {
+    return <LoadingSpinner message="Loading..." />;
   }
 
   if (error) {
