@@ -3,11 +3,20 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
-import { getActiveFocusPlanForUser } from '@/lib/firestore/focusPlans';
+import {
+  getActiveFocusPlanForUser,
+  pauseFocusPlan,
+  resumeFocusPlan,
+} from '@/lib/firestore/focusPlans';
+import { getAllFocusDaysForPlan } from '@/lib/firestore/focusDays';
 import { getUserPreferences, updateUserPreferences } from '@/lib/firestore/userPreferences';
-import { GlassCard, LoadingSpinner } from '@/components/ui';
+import { updateTrainingDaysPerWeekForFuture } from '@/lib/focus/planAdjustments';
+import { GlassCard, LoadingSpinner, Button } from '@/components/ui';
 import type { FocusPlan } from '@/lib/types/focusPlan';
 import type { UserPreferences } from '@/lib/firestore/userPreferences';
+import type { TrainingDayOfWeek } from '@/lib/focus/ramp';
+
+const ALL_DAYS: TrainingDayOfWeek[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
@@ -15,6 +24,12 @@ export default function SettingsPage() {
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [pauseResumeLoading, setPauseResumeLoading] = useState(false);
+  const [savingSchedule, setSavingSchedule] = useState(false);
+  const [error, setError] = useState<string>('');
+  const [scheduleError, setScheduleError] = useState<string>('');
+  const [selectedTrainingDays, setSelectedTrainingDays] = useState<TrainingDayOfWeek[]>([]);
+  const [dayCount, setDayCount] = useState<{ completed: number; total: number } | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -28,8 +43,23 @@ export default function SettingsPage() {
 
         setPlan(activePlan);
         setPreferences(userPrefs);
+
+        if (activePlan && activePlan.id) {
+          setSelectedTrainingDays(activePlan.trainingDaysPerWeek as TrainingDayOfWeek[]);
+          
+          // Load day count for progress
+          try {
+            const allDays = await getAllFocusDaysForPlan(activePlan.id);
+            const today = new Date().toISOString().split('T')[0];
+            const completed = allDays.filter((day) => day.date < today).length;
+            setDayCount({ completed, total: allDays.length });
+          } catch (dayError) {
+            console.error('Error loading day count:', dayError);
+          }
+        }
       } catch (error) {
         console.error('Error loading settings:', error);
+        setError('Failed to load settings. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -55,6 +85,76 @@ export default function SettingsPage() {
     }
   };
 
+  const handlePausePlan = async () => {
+    if (!user || !plan || !plan.id) return;
+
+    setPauseResumeLoading(true);
+    setError('');
+    try {
+      await pauseFocusPlan(user.uid, plan.id);
+      setPlan({ ...plan, status: 'paused' });
+    } catch (err) {
+      console.error('Error pausing plan:', err);
+      setError(err instanceof Error ? err.message : 'Failed to pause plan');
+    } finally {
+      setPauseResumeLoading(false);
+    }
+  };
+
+  const handleResumePlan = async () => {
+    if (!user || !plan || !plan.id) return;
+
+    setPauseResumeLoading(true);
+    setError('');
+    try {
+      await resumeFocusPlan(user.uid, plan.id);
+      setPlan({ ...plan, status: 'active' });
+    } catch (err) {
+      console.error('Error resuming plan:', err);
+      setError(err instanceof Error ? err.message : 'Failed to resume plan');
+    } finally {
+      setPauseResumeLoading(false);
+    }
+  };
+
+  const handleToggleTrainingDay = (day: TrainingDayOfWeek) => {
+    const isSelected = selectedTrainingDays.includes(day);
+    
+    if (isSelected) {
+      // Don't allow deselecting if it's the last day
+      if (selectedTrainingDays.length === 1) {
+        return;
+      }
+      setSelectedTrainingDays(selectedTrainingDays.filter((d) => d !== day));
+    } else {
+      setSelectedTrainingDays([...selectedTrainingDays, day]);
+    }
+    setScheduleError('');
+  };
+
+  const handleSaveSchedule = async () => {
+    if (!user || !plan || !plan.id) return;
+
+    // Check if there's any change
+    const currentDays = [...plan.trainingDaysPerWeek].sort();
+    const newDays = [...selectedTrainingDays].sort();
+    if (currentDays.join(',') === newDays.join(',')) {
+      return; // No change
+    }
+
+    setSavingSchedule(true);
+    setScheduleError('');
+    try {
+      await updateTrainingDaysPerWeekForFuture(user.uid, plan.id, selectedTrainingDays);
+      setPlan({ ...plan, trainingDaysPerWeek: selectedTrainingDays });
+    } catch (err) {
+      console.error('Error updating schedule:', err);
+      setScheduleError(err instanceof Error ? err.message : 'Failed to update schedule');
+    } finally {
+      setSavingSchedule(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -72,6 +172,13 @@ export default function SettingsPage() {
     return days.join(', ');
   };
 
+  const hasScheduleChanged = () => {
+    if (!plan) return false;
+    const currentDays = [...plan.trainingDaysPerWeek].sort();
+    const newDays = [...selectedTrainingDays].sort();
+    return currentDays.join(',') !== newDays.join(',');
+  };
+
   if (loading) {
     return <LoadingSpinner message="Loading settings..." />;
   }
@@ -85,49 +192,194 @@ export default function SettingsPage() {
         </p>
       </header>
 
-      {plan && (
+      {error && (
+        <div className="rounded-xl bg-red-500/20 px-4 py-3 text-red-200">
+          {error}
+        </div>
+      )}
+
+      {plan ? (
+        <>
+          <GlassCard>
+            <div className="mb-4 flex items-start justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-white">Current Plan</h2>
+                {plan.status === 'paused' && (
+                  <p className="mt-1 text-sm text-yellow-300">
+                    Your plan is paused. Resume it to continue training.
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {plan.status === 'active' && (
+                  <span className="flex items-center gap-2 rounded-full bg-green-500/20 px-3 py-1 text-sm font-medium text-green-300">
+                    <span className="h-2 w-2 rounded-full bg-green-400"></span>
+                    Active
+                  </span>
+                )}
+                {plan.status === 'paused' && (
+                  <span className="flex items-center gap-2 rounded-full bg-yellow-500/20 px-3 py-1 text-sm font-medium text-yellow-300">
+                    <span className="h-2 w-2 rounded-full bg-yellow-400"></span>
+                    Paused
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex justify-between border-b border-white/10 pb-3">
+                <span className="text-white/70">Target daily focus time</span>
+                <span className="font-medium text-white">
+                  {plan.targetDailyMinutes} minutes
+                </span>
+              </div>
+
+              <div className="flex justify-between border-b border-white/10 pb-3">
+                <span className="text-white/70">Started</span>
+                <span className="font-medium text-white">
+                  {formatDate(plan.startDate)}
+                </span>
+              </div>
+
+              {plan.endDate && (
+                <div className="flex justify-between border-b border-white/10 pb-3">
+                  <span className="text-white/70">End date</span>
+                  <span className="font-medium text-white">
+                    {formatDate(plan.endDate)}
+                  </span>
+                </div>
+              )}
+
+              {dayCount && (
+                <div className="flex justify-between border-b border-white/10 pb-3">
+                  <span className="text-white/70">Progress</span>
+                  <span className="font-medium text-white">
+                    Day {dayCount.completed} of {dayCount.total}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex justify-between">
+                <span className="text-white/70">Training days</span>
+                <span className="font-medium text-white">
+                  {formatTrainingDays(plan.trainingDaysPerWeek)}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              <div className="flex gap-3">
+                {plan.status === 'active' && (
+                  <>
+                    <Link href="/today" className="btn-primary flex-1">
+                      Continue training
+                    </Link>
+                    <Button
+                      variant="secondary"
+                      onClick={handlePausePlan}
+                      disabled={pauseResumeLoading}
+                    >
+                      {pauseResumeLoading ? 'Pausing...' : 'Pause plan'}
+                    </Button>
+                  </>
+                )}
+                {plan.status === 'paused' && (
+                  <Button
+                    onClick={handleResumePlan}
+                    disabled={pauseResumeLoading}
+                    className="flex-1"
+                  >
+                    {pauseResumeLoading ? 'Resuming...' : 'Resume plan'}
+                  </Button>
+                )}
+              </div>
+              {plan.status === 'paused' && (
+                <p className="text-center text-sm text-white/60">
+                  When paused, the Today page won&apos;t schedule training days
+                </p>
+              )}
+            </div>
+          </GlassCard>
+
+          <GlassCard>
+            <h2 className="mb-4 text-xl font-semibold text-white">
+              Training Schedule
+            </h2>
+
+            {scheduleError && (
+              <div className="mb-4 rounded-xl bg-red-500/20 px-4 py-3 text-sm text-red-200">
+                {scheduleError}
+              </div>
+            )}
+
+            <p className="mb-4 text-sm text-white/60">
+              Select which days of the week you want to train. Changes only affect
+              future training days—completed days stay as they are.
+            </p>
+
+            <div className="mb-6 grid grid-cols-7 gap-2">
+              {ALL_DAYS.map((day) => {
+                const isSelected = selectedTrainingDays.includes(day);
+                const isLastSelected = isSelected && selectedTrainingDays.length === 1;
+
+                return (
+                  <button
+                    key={day}
+                    onClick={() => handleToggleTrainingDay(day)}
+                    disabled={isLastSelected}
+                    className={`rounded-xl px-3 py-3 text-sm font-medium transition-all ${
+                      isSelected
+                        ? 'bg-blue-500/80 text-white shadow-md'
+                        : 'bg-white/10 text-white/60 hover:bg-white/20'
+                    } ${isLastSelected ? 'cursor-not-allowed opacity-50' : ''}`}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+
+            <Button
+              onClick={handleSaveSchedule}
+              disabled={!hasScheduleChanged() || savingSchedule}
+              className="w-full"
+            >
+              {savingSchedule ? 'Saving...' : 'Save schedule'}
+            </Button>
+
+            {selectedTrainingDays.length === 1 && (
+              <p className="mt-2 text-center text-xs text-white/50">
+                At least one training day must be selected
+              </p>
+            )}
+          </GlassCard>
+        </>
+      ) : (
         <GlassCard>
-          <h2 className="mb-4 text-xl font-semibold text-white">
-            Active focus plan
-          </h2>
-
-          <div className="space-y-4">
-            <div className="flex justify-between border-b border-white/10 pb-3">
-              <span className="text-white/70">Target daily focus time</span>
-              <span className="font-medium text-white">
-                {plan.targetDailyMinutes} minutes
-              </span>
+          <div className="text-center">
+            <div className="mb-4 flex justify-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10">
+                <svg
+                  className="h-8 w-8 text-white/60"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  />
+                </svg>
+              </div>
             </div>
-
-            <div className="flex justify-between border-b border-white/10 pb-3">
-              <span className="text-white/70">Started</span>
-              <span className="font-medium text-white">
-                {formatDate(plan.startDate)}
-              </span>
-            </div>
-
-            <div className="flex justify-between border-b border-white/10 pb-3">
-              <span className="text-white/70">Training days</span>
-              <span className="font-medium text-white">
-                {formatTrainingDays(plan.trainingDaysPerWeek)}
-              </span>
-            </div>
-
-            <div className="flex justify-between">
-              <span className="text-white/70">Status</span>
-              <span className="inline-flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-green-400"></span>
-                <span className="font-medium text-green-300">Active</span>
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-6 flex gap-3">
-            <Link href="/today" className="btn-primary">
-              Continue training
-            </Link>
-            <Link href="/history" className="btn-secondary">
-              View history
+            <h2 className="mb-2 text-2xl font-bold text-white">No active focus plan</h2>
+            <p className="mb-6 text-white/70">
+              Create a plan to start building your focus capacity
+            </p>
+            <Link href="/onboarding">
+              <Button>Create your plan</Button>
             </Link>
           </div>
         </GlassCard>

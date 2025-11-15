@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 
-export type FocusPlanStatus = 'active' | 'completed' | 'archived';
+export type FocusPlanStatus = 'active' | 'paused' | 'completed' | 'archived';
 
 export interface FocusPlan {
   id?: string;
@@ -14,6 +14,7 @@ export interface FocusPlan {
   trainingDaysPerWeek: string[];
   status: FocusPlanStatus;
   completedAt?: Timestamp | null;
+  pausedAt?: Timestamp | null;
   startingDailyMinutes?: number;
 }
 

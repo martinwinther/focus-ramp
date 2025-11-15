@@ -7,6 +7,7 @@ import {
   getAllPlansForUser,
   getActiveFocusPlanForUser,
   setFocusPlanStatus,
+  resumeFocusPlan,
 } from '@/lib/firestore/focusPlans';
 import type { FocusPlan } from '@/lib/types/focusPlan';
 import { GlassCard, EmptyState, LoadingSpinner, Button, Badge } from '@/components/ui';
@@ -18,6 +19,7 @@ export default function PlansPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [completingPlanId, setCompletingPlanId] = useState<string | null>(null);
+  const [resumingPlanId, setResumingPlanId] = useState<string | null>(null);
 
   const loadPlans = async () => {
     if (!user) return;
@@ -64,6 +66,25 @@ export default function PlansPage() {
     }
   };
 
+  const handleResumePlan = async (planId: string) => {
+    if (!user) return;
+
+    setResumingPlanId(planId);
+    try {
+      await resumeFocusPlan(user.uid, planId);
+      await loadPlans();
+    } catch (err) {
+      console.error('Error resuming plan:', err);
+      alert(
+        err instanceof Error
+          ? err.message
+          : 'Failed to resume plan. Please try again.'
+      );
+    } finally {
+      setResumingPlanId(null);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -85,6 +106,8 @@ export default function PlansPage() {
     switch (status) {
       case 'active':
         return 'success';
+      case 'paused':
+        return 'default';
       case 'completed':
         return 'default';
       case 'archived':
@@ -121,7 +144,7 @@ export default function PlansPage() {
               </div>
             </div>
             <h2 className="mb-2 text-2xl font-bold text-white">
-              Couldn't load your plans
+              Couldn&apos;t load your plans
             </h2>
             <p className="mb-6 text-white/70">{error}</p>
             <div className="flex justify-center gap-3">
@@ -285,15 +308,26 @@ export default function PlansPage() {
                   </div>
                 </div>
 
-                {plan.status === 'active' && (
-                  <button
-                    onClick={() => handleMarkAsCompleted(plan.id!)}
-                    disabled={completingPlanId === plan.id}
-                    className="btn-secondary text-sm disabled:opacity-50"
-                  >
-                    {completingPlanId === plan.id ? 'Marking...' : 'Mark as completed'}
-                  </button>
-                )}
+                <div className="flex gap-2">
+                  {plan.status === 'active' && (
+                    <button
+                      onClick={() => handleMarkAsCompleted(plan.id!)}
+                      disabled={completingPlanId === plan.id}
+                      className="btn-secondary text-sm disabled:opacity-50"
+                    >
+                      {completingPlanId === plan.id ? 'Marking...' : 'Mark as completed'}
+                    </button>
+                  )}
+                  {plan.status === 'paused' && (
+                    <button
+                      onClick={() => handleResumePlan(plan.id!)}
+                      disabled={resumingPlanId === plan.id}
+                      className="btn-primary text-sm disabled:opacity-50"
+                    >
+                      {resumingPlanId === plan.id ? 'Resuming...' : 'Resume'}
+                    </button>
+                  )}
+                </div>
               </div>
             </GlassCard>
           ))}
@@ -302,4 +336,3 @@ export default function PlansPage() {
     </div>
   );
 }
-

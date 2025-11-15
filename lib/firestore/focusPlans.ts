@@ -257,3 +257,45 @@ export async function createNewActivePlanForUser(
   }
 }
 
+export async function pauseFocusPlan(userId: string, planId: string): Promise<void> {
+  try {
+    const planRef = doc(firebaseFirestore, FOCUS_PLANS_COLLECTION, planId);
+    
+    await updateDoc(planRef, {
+      status: 'paused',
+      pausedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error pausing plan:', error);
+    throw new Error('Failed to pause your plan. Please try again.');
+  }
+}
+
+export async function resumeFocusPlan(userId: string, planId: string): Promise<void> {
+  try {
+    // Check if there's already an active plan
+    const existingActivePlan = await getActiveFocusPlanForUser(userId);
+    
+    if (existingActivePlan && existingActivePlan.id !== planId) {
+      throw new Error(
+        'You already have an active plan. Please complete or archive it before resuming this plan.'
+      );
+    }
+    
+    const planRef = doc(firebaseFirestore, FOCUS_PLANS_COLLECTION, planId);
+    
+    await updateDoc(planRef, {
+      status: 'active',
+      pausedAt: null,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('already have an active plan')) {
+      throw error;
+    }
+    console.error('Error resuming plan:', error);
+    throw new Error('Failed to resume your plan. Please try again.');
+  }
+}
+

@@ -7,6 +7,7 @@ import { usePlanConfig } from '@/lib/hooks/usePlanConfig';
 import {
   getActiveFocusPlanForUser,
   createNewActivePlanForUser,
+  getAllPlansForUser,
 } from '@/lib/firestore/focusPlans';
 import { getFocusDayForDate, getNextTrainingDay } from '@/lib/firestore/focusDays';
 import type { FocusPlan, FocusDay } from '@/lib/types/focusPlan';
@@ -18,6 +19,7 @@ export default function TodayPage() {
   const { user } = useAuth();
   const { config, clearPlanConfig } = usePlanConfig();
   const [plan, setPlan] = useState<FocusPlan | null>(null);
+  const [pausedPlan, setPausedPlan] = useState<FocusPlan | null>(null);
   const [todayDay, setTodayDay] = useState<FocusDay | null>(null);
   const [nextDay, setNextDay] = useState<FocusDay | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,6 +38,7 @@ export default function TodayPage() {
 
       if (existingPlan) {
         setPlan(existingPlan);
+        setPausedPlan(null);
         clearPlanConfig();
         
         const today = new Date().toISOString().split('T')[0];
@@ -46,33 +49,43 @@ export default function TodayPage() {
           const upcoming = await getNextTrainingDay(existingPlan.id!);
           setNextDay(upcoming);
         }
-      } else if (config) {
-        setCreating(true);
-        try {
-          const newPlan = await createNewActivePlanForUser(user.uid, config);
-          setPlan(newPlan);
-          clearPlanConfig();
-          
-          if (newPlan) {
-            const today = new Date().toISOString().split('T')[0];
-            const dayData = await getFocusDayForDate(newPlan.id!, today);
-            setTodayDay(dayData);
+      } else {
+        // No active plan, check if there's a paused plan
+        const allPlans = await getAllPlansForUser(user.uid);
+        const paused = allPlans.find((p) => p.status === 'paused');
+        
+        if (paused) {
+          setPausedPlan(paused);
+          setPlan(null);
+        } else if (config) {
+          // Create new plan from config
+          setCreating(true);
+          try {
+            const newPlan = await createNewActivePlanForUser(user.uid, config);
+            setPlan(newPlan);
+            clearPlanConfig();
             
-            if (!dayData) {
-              const upcoming = await getNextTrainingDay(newPlan.id!);
-              setNextDay(upcoming);
+            if (newPlan) {
+              const today = new Date().toISOString().split('T')[0];
+              const dayData = await getFocusDayForDate(newPlan.id!, today);
+              setTodayDay(dayData);
+              
+              if (!dayData) {
+                const upcoming = await getNextTrainingDay(newPlan.id!);
+                setNextDay(upcoming);
+              }
             }
+          } catch (planError: unknown) {
+            console.error('Error creating plan:', planError);
+            setError(
+              planError instanceof Error
+                ? planError.message
+                : 'Failed to create your plan. Please try again.'
+            );
+            clearPlanConfig();
+          } finally {
+            setCreating(false);
           }
-        } catch (planError: unknown) {
-          console.error('Error creating plan:', planError);
-          setError(
-            planError instanceof Error
-              ? planError.message
-              : 'Failed to create your plan. Please try again.'
-          );
-          clearPlanConfig();
-        } finally {
-          setCreating(false);
         }
       }
     } catch (err: unknown) {
@@ -128,11 +141,52 @@ export default function TodayPage() {
               </div>
             </div>
             <h2 className="mb-2 text-2xl font-bold text-white">
-              Couldn't load your data
+              Couldn&apos;t load your data
             </h2>
             <p className="mb-6 text-white/70">{error}</p>
             <div className="flex justify-center gap-3">
               <Button onClick={() => loadPlan()}>Try again</Button>
+              <Link href="/onboarding">
+                <Button variant="secondary">Create new plan</Button>
+              </Link>
+            </div>
+          </div>
+        </GlassCard>
+      </div>
+    );
+  }
+
+  // Show paused plan state
+  if (pausedPlan && !plan) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <GlassCard>
+          <div className="text-center">
+            <div className="mb-4 flex justify-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-yellow-500/20">
+                <svg
+                  className="h-8 w-8 text-yellow-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+            </div>
+            <h2 className="mb-2 text-2xl font-bold text-white">Your plan is paused</h2>
+            <p className="mb-6 text-white/70">
+              Resume your plan from Settings to continue training, or create a new plan.
+            </p>
+            <div className="flex justify-center gap-3">
+              <Link href="/settings">
+                <Button>Go to Settings</Button>
+              </Link>
               <Link href="/onboarding">
                 <Button variant="secondary">Create new plan</Button>
               </Link>
@@ -254,7 +308,7 @@ export default function TodayPage() {
             </svg>
           }
           title="Plan complete!"
-          description="Congratulations! You've finished your training plan."
+          description="Congratulations! You&apos;ve finished your training plan."
           action={
             <div className="flex gap-3">
               <Link href="/history">
@@ -276,7 +330,7 @@ export default function TodayPage() {
         <>
           <GlassCard>
             <div className="mb-6">
-              <h1 className="text-3xl font-bold text-white">Today's training</h1>
+              <h1 className="text-3xl font-bold text-white">Today&apos;s training</h1>
               <p className="mt-1 text-white/70">
                 {formatDate(todayDay.date)} • Day {todayDay.index}
               </p>
@@ -284,7 +338,7 @@ export default function TodayPage() {
 
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-xl bg-white/5 p-4">
-                <div className="text-sm text-white/60">Today's target</div>
+                <div className="text-sm text-white/60">Today&apos;s target</div>
                 <div className="mt-1 text-2xl font-bold text-white">
                   {todayDay.dailyTargetMinutes} min
                 </div>
