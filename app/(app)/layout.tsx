@@ -116,6 +116,13 @@ export default function AppLayout({
                 Today
               </Link>
               <Link
+                href="/plans"
+                className={`nav-link ${pathname === '/plans' ? 'nav-link-active' : ''}`}
+                aria-current={pathname === '/plans' ? 'page' : undefined}
+              >
+                Plans
+              </Link>
+              <Link
                 href="/history"
                 className={`nav-link ${pathname === '/history' ? 'nav-link-active' : ''}`}
                 aria-current={pathname === '/history' ? 'page' : undefined}
@@ -159,6 +166,13 @@ export default function AppLayout({
             aria-current={pathname === '/today' ? 'page' : undefined}
           >
             Today
+          </Link>
+          <Link
+            href="/plans"
+            className={`nav-link ${pathname === '/plans' ? 'nav-link-active' : ''}`}
+            aria-current={pathname === '/plans' ? 'page' : undefined}
+          >
+            Plans
           </Link>
           <Link
             href="/history"

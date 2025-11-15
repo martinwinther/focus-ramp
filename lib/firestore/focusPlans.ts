@@ -6,11 +6,13 @@ import {
   orderBy,
   limit,
   getDocs,
+  doc,
+  updateDoc,
   Timestamp,
   serverTimestamp,
 } from 'firebase/firestore';
 import { firebaseFirestore } from '@/lib/firebase/client';
-import type { FocusPlan, FocusPlanConfig } from '@/lib/types/focusPlan';
+import type { FocusPlan, FocusPlanConfig, FocusPlanStatus } from '@/lib/types/focusPlan';
 import { generateFocusDayPlans } from '@/lib/focus/ramp';
 import type { TrainingDayOfWeek } from '@/lib/focus/ramp';
 import { createFocusDaysForPlan } from './focusDays';
@@ -93,10 +95,71 @@ export async function getActiveFocusPlanForUser(
     return null;
   }
 
-  const doc = querySnapshot.docs[0];
+  const docSnapshot = querySnapshot.docs[0];
   return {
+    id: docSnapshot.id,
+    ...docSnapshot.data(),
+  } as FocusPlan;
+}
+
+export async function getAllPlansForUser(
+  userId: string
+): Promise<FocusPlan[]> {
+  const q = query(
+    collection(firebaseFirestore, FOCUS_PLANS_COLLECTION),
+    where('userId', '==', userId),
+    orderBy('createdAt', 'desc')
+  );
+
+  const querySnapshot = await getDocs(q);
+
+  return querySnapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
-  } as FocusPlan;
+  })) as FocusPlan[];
+}
+
+export async function setFocusPlanStatus(
+  userId: string,
+  planId: string,
+  status: FocusPlanStatus
+): Promise<void> {
+  const planRef = doc(firebaseFirestore, FOCUS_PLANS_COLLECTION, planId);
+  
+  const updateData: Record<string, unknown> = {
+    status,
+    updatedAt: serverTimestamp(),
+  };
+
+  if (status === 'completed') {
+    updateData.completedAt = serverTimestamp();
+  }
+
+  await updateDoc(planRef, updateData);
+}
+
+export async function createNewActivePlanForUser(
+  userId: string,
+  config: FocusPlanConfig
+): Promise<FocusPlan> {
+  // Deactivate any currently active plans for this user
+  const activePlan = await getActiveFocusPlanForUser(userId);
+  if (activePlan && activePlan.id) {
+    // TODO: Consider if we want to mark as 'completed' or 'archived' based on plan progress
+    // For now, we archive the old plan when creating a new one
+    await setFocusPlanStatus(userId, activePlan.id, 'archived');
+  }
+
+  // Create the new active plan
+  const planId = await createFocusPlan(userId, config);
+
+  // Fetch and return the newly created plan
+  const newPlan = await getActiveFocusPlanForUser(userId);
+  
+  if (!newPlan) {
+    throw new Error('Failed to create new active plan');
+  }
+
+  return newPlan;
 }
 

@@ -6,7 +6,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { usePlanConfig } from '@/lib/hooks/usePlanConfig';
 import {
   getActiveFocusPlanForUser,
-  createFocusPlan,
+  createNewActivePlanForUser,
 } from '@/lib/firestore/focusPlans';
 import { getFocusDayForDate, getNextTrainingDay } from '@/lib/firestore/focusDays';
 import type { FocusPlan, FocusDay } from '@/lib/types/focusPlan';
@@ -46,8 +46,7 @@ export default function TodayPage() {
           }
         } else if (config) {
           setCreating(true);
-          const planId = await createFocusPlan(user.uid, config);
-          const newPlan = await getActiveFocusPlanForUser(user.uid);
+          const newPlan = await createNewActivePlanForUser(user.uid, config);
           setPlan(newPlan);
           clearPlanConfig();
           
