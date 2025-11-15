@@ -3,21 +3,33 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { GlassCard, Button } from '@/components/ui';
-import { getActiveFocusPlanForUser } from '@/lib/firestore/focusPlans';
 
 export default function EmailVerifiedPage() {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
   const [autoRedirected, setAutoRedirected] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure we're on the client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
+    // Don't run on server side
+    if (typeof window === 'undefined' || !isClient) {
+      setChecking(false);
+      return;
+    }
+
     let isMounted = true;
 
     async function checkUser() {
       try {
-        // Dynamically import Firebase to avoid SSR issues
-        const [{ getFirebaseAuth }] = await Promise.all([
+        // Dynamically import Firebase and Firestore to avoid SSR issues
+        const [{ getFirebaseAuth }, { getActiveFocusPlanForUser }] = await Promise.all([
           import('@/lib/firebase/client'),
+          import('@/lib/firestore/focusPlans'),
         ]);
 
         const auth = await getFirebaseAuth();
@@ -63,7 +75,7 @@ export default function EmailVerifiedPage() {
     return () => {
       isMounted = false;
     };
-  }, [router]);
+  }, [router, isClient]);
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
