@@ -16,9 +16,7 @@ export function Monitoring() {
         if (!Sentry || !Sentry.init) return;
         Sentry.init({
           dsn,
-          tracesSampleRate: 0.1,
-          replaysSessionSampleRate: 0.0,
-          replaysOnErrorSampleRate: 0.1,
+          tracesSampleRate: 0.1
         });
         logger.info('Sentry initialized');
       })
