@@ -2,19 +2,13 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/components/AuthProvider';
-import dynamic from 'next/dynamic';
+import ClientMonitoring from '@/components/ClientMonitoring';
 
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-inter',
 });
-
-// Client-only monitoring initializer (Sentry). Loaded only in the browser.
-const Monitoring = dynamic(
-  () => import('@/components/Monitoring').then((m) => m.Monitoring),
-  { ssr: false }
-);
 
 export const metadata: Metadata = {
   title: 'Focus Ramp – Build your focus capacity, gradually',
@@ -46,7 +40,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="font-sans">
         {/* Client-side monitoring initialization */}
-        <Monitoring />
+        <ClientMonitoring />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
