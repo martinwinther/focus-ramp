@@ -10,8 +10,6 @@ import { buildFocusDayRows, type FocusDayRow } from '@/lib/focus/planDetails';
 import type { FocusPlan } from '@/lib/types/focusPlan';
 import { GlassCard, EmptyState, LoadingSpinner, Button, Badge } from '@/components/ui';
 
-export const runtime = 'edge';
-
 export default function PlanDetailsPage() {
   const params = useParams();
   const router = useRouter();

@@ -5,8 +5,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
 
-export const runtime = 'edge';
-
 export default function AppLayout({
   children,
 }: Readonly<{
