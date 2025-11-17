@@ -424,7 +424,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <Toggle
-                checked={preferences.soundEnabled}
+                checked={preferences.soundEnabled ?? true}
                 onChange={(checked) => handlePreferenceChange('soundEnabled', checked)}
                 disabled={saving}
                 ariaLabel="Toggle sound notifications"
@@ -449,7 +449,7 @@ export default function SettingsPage() {
                 )}
               </div>
               <Toggle
-                checked={preferences.notificationsEnabled && notificationsSupported}
+                checked={preferences.notificationsEnabled ?? false}
                 onChange={(checked) => handlePreferenceChange('notificationsEnabled', checked)}
                 disabled={saving || !notificationsSupported}
                 ariaLabel="Toggle desktop notifications"
@@ -464,7 +464,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <Toggle
-                checked={preferences.autoStartNextSegment}
+                checked={preferences.autoStartNextSegment ?? false}
                 onChange={(checked) => handlePreferenceChange('autoStartNextSegment', checked)}
                 disabled={saving}
                 ariaLabel="Toggle auto-start next session"
