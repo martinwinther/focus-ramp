@@ -52,7 +52,7 @@ export default withSentryConfig(nextConfig, {
 
   org: "martin-winther",
 
-  project: "focus-ramp",
+  project: "focus180",
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,

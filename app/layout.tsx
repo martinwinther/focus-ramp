@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/components/AuthProvider';
 import ClientMonitoring from '@/components/ClientMonitoring';
+import { APP_NAME, APP_DESCRIPTION, APP_CANONICAL_URL } from '@/lib/config/appConfig';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -11,22 +12,24 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Focus Ramp – Build your focus capacity, gradually',
-  description: 'Gradually build your focus capacity with guided Pomodoro training tailored to your goals. Set a focus goal, choose an end date, and follow a personalized training plan that grows with you.',
+  title: `${APP_NAME} – ${APP_DESCRIPTION.split('.')[0]}`,
+  description: APP_DESCRIPTION,
   keywords: ['focus', 'pomodoro', 'productivity', 'deep work', 'training', 'focus training', 'attention', 'concentration'],
-  authors: [{ name: 'Focus Ramp' }],
+  authors: [{ name: APP_NAME }],
   openGraph: {
-    title: 'Focus Ramp – Build your focus capacity, gradually',
-    description: 'Gradually build your focus capacity with guided Pomodoro training tailored to your goals.',
+    title: `${APP_NAME} – ${APP_DESCRIPTION.split('.')[0]}`,
+    description: APP_DESCRIPTION,
     type: 'website',
     locale: 'en_US',
-    siteName: 'Focus Ramp',
+    siteName: APP_NAME,
+    url: APP_CANONICAL_URL,
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Focus Ramp – Build your focus capacity, gradually',
-    description: 'Gradually build your focus capacity with guided Pomodoro training tailored to your goals.',
+    title: `${APP_NAME} – ${APP_DESCRIPTION.split('.')[0]}`,
+    description: APP_DESCRIPTION,
   },
+  metadataBase: new URL(APP_CANONICAL_URL),
 };
 
 export const viewport = {

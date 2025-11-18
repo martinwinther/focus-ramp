@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from './AuthProvider';
+import { APP_NAME } from '@/lib/config/appConfig';
 
 export function PublicHeader() {
   const { user } = useAuth();
@@ -10,7 +11,7 @@ export function PublicHeader() {
     <header className="sticky top-0 z-50 border-b border-white/10 bg-white/5 backdrop-blur-xl">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-2" aria-label="Focus Ramp home">
+          <Link href="/" className="flex items-center gap-2" aria-label={`${APP_NAME} home`}>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
               <svg
                 className="h-5 w-5 text-white"
@@ -27,7 +28,7 @@ export function PublicHeader() {
                 />
               </svg>
             </div>
-            <span className="text-lg font-semibold text-white">Focus Ramp</span>
+            <span className="text-lg font-semibold text-white">{APP_NAME}</span>
           </Link>
 
           <nav className="flex items-center gap-6" aria-label="Public navigation">

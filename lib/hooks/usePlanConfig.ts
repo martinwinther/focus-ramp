@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import type { FocusPlanConfig } from '@/lib/types/focusPlan';
 
+// Note: Keeping legacy storage key to avoid breaking existing user data
+// TODO: Consider migration strategy if needed
 const STORAGE_KEY = 'focus-ramp-plan-config';
 
 export function usePlanConfig() {
@@ -35,6 +37,7 @@ export function usePlanConfig() {
     clearPlanConfig,
   };
 }
+
 
 
 

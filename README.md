@@ -1,18 +1,18 @@
-# Focus Ramp
+# Focus 180
 
 A web application that helps people gradually build their capacity for focused work using structured Pomodoro sessions.
 
 ## What It Does
 
-Focus Ramp turns a long-term focus goal into a structured training plan. Instead of trying to work for hours on day one, the app creates a gradual ramp that builds your deep work capacity over time.
+Focus 180 turns a long-term focus goal into a structured training plan. Instead of trying to work for hours on day one, the app creates a gradual ramp that builds your deep work capacity over time, training you up to 180 minutes of deep work.
 
 You define:
 
-- How long you want to be able to focus each day (target daily minutes)
+- How long you want to be able to focus each day (target daily minutes, up to 180)
 - When you want to reach that level (end date)
 - Which days you want to train (e.g. Monday through Friday)
 
-Focus Ramp automatically generates a day-by-day plan that:
+Focus 180 automatically generates a day-by-day plan that:
 
 - Starts with manageable sessions
 - Increases incrementally over training days
@@ -44,7 +44,7 @@ The app emphasizes gentle progression and clarity. The interface uses a calm, gl
 - **Frontend:** Next.js 15 with App Router, TypeScript, Tailwind CSS
 - **Backend:** Firebase Authentication + Firestore
 - **Deployment:** Vercel
-- **Live URL:** https://focus-ramp.vercel.app/
+- **Live URL:** https://focus180.app
 
 ## Getting Started
 
@@ -59,7 +59,7 @@ The app emphasizes gentle progression and clarity. The interface uses a calm, gl
 
 ```bash
 git clone <repository-url>
-cd focus-ramp
+cd focus180
 ```
 
 2. Install dependencies:
@@ -89,7 +89,7 @@ npm run build
 
 ### Deploy to Vercel
 
-The app is deployed on [Vercel](https://vercel.com) at https://focus-ramp.vercel.app/
+The app is deployed on [Vercel](https://vercel.com) at https://focus180.app
 
 To deploy:
 1. Push your code to GitHub
@@ -102,7 +102,7 @@ Vercel will automatically detect Next.js and use the correct build settings.
 ## Project Structure
 
 ```
-focus-ramp/
+focus180/
 ├── app/                    # Next.js App Router pages
 │   ├── (app)/             # Protected app routes
 │   │   ├── today/         # Today view (main dashboard)
@@ -121,7 +121,7 @@ focus-ramp/
 │   └── hooks/             # Custom React hooks
 └── docs/                  # Documentation
     ├── firebase-setup.md  # Firebase setup instructions
-    └── focus-ramp-design.md  # Product design document
+    └── focus-ramp-design.md  # Product design document (legacy name)
 ```
 
 ## Current Status
@@ -143,6 +143,12 @@ Core features complete:
 - [Firebase Setup Guide](./docs/firebase-setup.md) - Complete Firebase configuration instructions
 - [Product Design](./docs/focus-ramp-design.md) - Detailed product vision and design
 - [Best Practices](./docs/best-practices.md) - Development guidelines
+
+## Branding
+
+- **Product Name:** Focus 180
+- **Canonical URL:** https://focus180.app
+- **Tagline:** Couch to 3 hours of deep work.
 
 ## License
 

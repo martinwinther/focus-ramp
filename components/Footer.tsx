@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { APP_NAME } from '@/lib/config/appConfig';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -8,7 +9,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <p className="text-sm text-white/60">
-            © {currentYear} Focus Ramp
+            © {currentYear} {APP_NAME}
           </p>
           
           <nav className="flex items-center gap-6" aria-label="Footer navigation">

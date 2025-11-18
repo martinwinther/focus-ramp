@@ -46,8 +46,7 @@ export default function LandingPage() {
 
               {/* Subheading */}
               <p className="mx-auto mb-10 max-w-2xl text-lg text-white/90 md:text-xl">
-                Set a focus goal, choose an end date, and get a gradual Pomodoro-based training plan. 
-                No pressure. No perfectionism. Just steady progress.
+                Couch-to-5K, but for your focus. Train up to 180 minutes of deep work, one day at a time.
               </p>
 
               {/* Primary CTAs */}

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { PublicHeader } from '@/components/PublicHeader';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/components/AuthProvider';
+import { APP_NAME } from '@/lib/config/appConfig';
 
 export default function AboutPage() {
   const { user } = useAuth();
@@ -18,7 +19,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-3xl">
           <div className="glass-card">
             <h1 className="mb-8 text-4xl font-bold text-white md:text-5xl">
-              About Focus Ramp
+              About {APP_NAME}
             </h1>
 
             <div className="space-y-6 text-white/90">
@@ -34,8 +35,8 @@ export default function AboutPage() {
               <div>
                 <h2 className="mb-3 text-2xl font-semibold text-white">The idea</h2>
                 <p className="leading-relaxed">
-                  Focus Ramp treats focus capacity like a trainable skill. You set a goal (how many minutes 
-                  you want to focus) and an end date. The app generates a gradual training plan using Pomodoro 
+                  {APP_NAME} treats focus capacity like a trainable skill. You set a goal (how many minutes 
+                  you want to focus, up to 180 minutes) and an end date. The app generates a gradual training plan using Pomodoro 
                   sessions that start small and grow over time. Each day, you follow the plan—work in focused 
                   intervals, take breaks, and slowly build the habit.
                 </p>
@@ -45,7 +46,7 @@ export default function AboutPage() {
                 <h2 className="mb-3 text-2xl font-semibold text-white">The philosophy</h2>
                 <p className="leading-relaxed">
                   We believe in gentle progression over aggressive ambition. No productivity guilt. 
-                  No shame for starting small. Focus Ramp is designed to meet you where you are and help 
+                  No shame for starting small. {APP_NAME} is designed to meet you where you are and help 
                   you grow at a sustainable pace. The goal isn&apos;t perfection—it&apos;s progress.
                 </p>
               </div>

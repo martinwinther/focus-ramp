@@ -1,3 +1,5 @@
+// Note: Keeping legacy storage key prefix to avoid breaking existing user sessions
+// TODO: Consider migration strategy if needed
 const STORAGE_KEY_PREFIX = 'focusRamp:activeSession:';
 
 export type PersistedSessionState = {
