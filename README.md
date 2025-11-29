@@ -1,10 +1,10 @@
-# Focus 180
+# 180 Focus
 
 A web application that helps people gradually build their capacity for focused work using structured Pomodoro sessions.
 
 ## What It Does
 
-Focus 180 turns a long-term focus goal into a structured training plan. Instead of trying to work for hours on day one, the app creates a gradual ramp that builds your deep work capacity over time, training you up to 180 minutes of deep work.
+180 Focus turns a long-term focus goal into a structured training plan. Instead of trying to work for hours on day one, the app creates a gradual ramp that builds your deep work capacity over time, training you up to 180 minutes of deep work.
 
 You define:
 
@@ -12,7 +12,7 @@ You define:
 - When you want to reach that level (end date)
 - Which days you want to train (e.g. Monday through Friday)
 
-Focus 180 automatically generates a day-by-day plan that:
+180 Focus automatically generates a day-by-day plan that:
 
 - Starts with manageable sessions
 - Increases incrementally over training days
@@ -146,7 +146,7 @@ Core features complete:
 
 ## Branding
 
-- **Product Name:** Focus 180
+- **Product Name:** 180 Focus
 - **Canonical URL:** https://180focus.app
 - **Tagline:** Couch to 3 hours of deep work.
 

@@ -28,7 +28,7 @@ export function useDocumentTitle({
 
       const timeDisplay = formatTime(secondsRemaining);
       const sessionType = segmentType === 'work' ? '🔥' : '☕';
-      document.title = `${timeDisplay} ${sessionType} Focus 180`;
+      document.title = `${timeDisplay} ${sessionType} ${APP_NAME}`;
     } else {
       document.title = defaultTitle;
     }

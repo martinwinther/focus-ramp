@@ -1,8 +1,8 @@
 /**
- * Central branding and configuration constants for Focus 180
+ * Central branding and configuration constants for 180 Focus
  */
 
-export const APP_NAME = 'Focus 180';
+export const APP_NAME = '180 Focus';
 
 export const APP_TAGLINE = 'Couch to 3 hours of deep work.';
 

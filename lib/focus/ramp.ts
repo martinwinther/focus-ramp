@@ -1,5 +1,5 @@
 /**
- * Pure TypeScript ramp generator for Focus 180.
+ * Pure TypeScript ramp generator for 180 Focus.
  * Generates training dates, daily targets, and Pomodoro segments.
  */
 

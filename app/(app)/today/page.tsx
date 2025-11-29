@@ -515,7 +515,7 @@ function PlanCompletedView({ plan, userId }: PlanCompletedViewProps) {
           </div>
 
           <h1 className="mb-3 text-4xl font-bold text-white">
-            You completed your Focus 180 plan!
+            You completed your 180 Focus plan!
           </h1>
 
           <p className="mb-8 text-lg text-white/70">

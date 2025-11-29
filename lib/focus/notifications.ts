@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Browser notification helper for Focus 180.
+ * Browser notification helper for 180 Focus.
  * Provides a thin wrapper over the browser Notification API.
  * 
  * Usage:
