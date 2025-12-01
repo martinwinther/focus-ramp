@@ -16,14 +16,14 @@ export default function LandingPage() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-16">
+        <section className="flex min-h-[calc(100vh-3.5rem)] sm:min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 sm:py-16">
           <div className="w-full max-w-4xl">
-            <div className="glass-card text-center">
+            <div className="glass-card text-center p-6 sm:p-8">
               {/* Logo Mark */}
-              <div className="mb-8 flex justify-center">
-                <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/20 backdrop-blur-sm ring-2 ring-white/20">
+              <div className="mb-6 sm:mb-8 flex justify-center">
+                <div className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-3xl bg-primary/20 backdrop-blur-sm ring-2 ring-white/20">
                   <svg
-                    className="h-10 w-10 text-white"
+                    className="h-8 w-8 sm:h-10 sm:w-10 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -40,22 +40,22 @@ export default function LandingPage() {
               </div>
 
               {/* Main Headline */}
-              <h1 className="mb-6 text-5xl font-bold text-white md:text-6xl lg:text-7xl">
-                Build your focus, one&nbsp;training&nbsp;day at&nbsp;a&nbsp;time
+              <h1 className="mb-4 sm:mb-6 text-3xl sm:text-5xl font-bold text-white md:text-6xl lg:text-7xl leading-tight">
+                Build your focus, one training day at a time
               </h1>
 
               {/* Subheading */}
-              <p className="mx-auto mb-10 max-w-2xl text-lg text-white/90 md:text-xl">
+              <p className="mx-auto mb-8 sm:mb-10 max-w-2xl text-base sm:text-lg text-white/90 md:text-xl px-2">
                 Couch-to-5K, but for your focus. Train up to 180 minutes of deep work, one day at a time.
               </p>
 
               {/* Primary CTAs */}
-              <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-                <Link href={ctaHref} className="btn-primary w-full sm:w-auto">
+              <div className="flex flex-col items-center gap-3 sm:gap-4 sm:flex-row sm:justify-center">
+                <Link href={ctaHref} className="btn-primary w-full sm:w-auto text-sm sm:text-base">
                   {ctaText}
                 </Link>
                 {!user && (
-                  <Link href="/auth/signin" className="btn-secondary w-full sm:w-auto">
+                  <Link href="/auth/signin" className="btn-secondary w-full sm:w-auto text-sm sm:text-base">
                     Sign in
                   </Link>
                 )}
@@ -65,19 +65,19 @@ export default function LandingPage() {
         </section>
 
         {/* How It Works Section */}
-        <section className="px-4 py-16">
+        <section className="px-4 py-12 sm:py-16">
           <div className="mx-auto max-w-6xl">
-            <h2 className="mb-12 text-center text-3xl font-bold text-white md:text-4xl">
+            <h2 className="mb-8 sm:mb-12 text-center text-2xl sm:text-3xl font-bold text-white md:text-4xl">
               How it works
             </h2>
 
             <div className="grid gap-6 md:grid-cols-3">
               {/* Step 1 */}
-              <div className="glass-card text-center">
+              <div className="glass-card text-center p-6 sm:p-8">
                 <div className="mb-4 flex justify-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/20 backdrop-blur-sm">
+                  <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-primary/20 backdrop-blur-sm">
                     <svg
-                      className="h-8 w-8 text-white"
+                      className="h-7 w-7 sm:h-8 sm:w-8 text-white"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -91,21 +91,21 @@ export default function LandingPage() {
                     </svg>
                   </div>
                 </div>
-                <h3 className="mb-3 text-xl font-semibold text-white">
+                <h3 className="mb-3 text-lg sm:text-xl font-semibold text-white">
                   Set your focus goal
                 </h3>
-                <p className="text-white/80">
+                <p className="text-sm sm:text-base text-white/80">
                   Choose your target focus duration, end date, and training days per week. 
                   We&apos;ll calculate the perfect ramp for you.
                 </p>
               </div>
 
               {/* Step 2 */}
-              <div className="glass-card text-center">
+              <div className="glass-card text-center p-6 sm:p-8">
                 <div className="mb-4 flex justify-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/20 backdrop-blur-sm">
+                  <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-primary/20 backdrop-blur-sm">
                     <svg
-                      className="h-8 w-8 text-white"
+                      className="h-7 w-7 sm:h-8 sm:w-8 text-white"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -119,21 +119,21 @@ export default function LandingPage() {
                     </svg>
                   </div>
                 </div>
-                <h3 className="mb-3 text-xl font-semibold text-white">
+                <h3 className="mb-3 text-lg sm:text-xl font-semibold text-white">
                   Train day by day
                 </h3>
-                <p className="text-white/80">
+                <p className="text-sm sm:text-base text-white/80">
                   Follow the guided Pomodoro sessions that gradually increase. 
                   Work in focused intervals, take breaks, build the habit.
                 </p>
               </div>
 
               {/* Step 3 */}
-              <div className="glass-card text-center">
+              <div className="glass-card text-center p-6 sm:p-8">
                 <div className="mb-4 flex justify-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary/20 backdrop-blur-sm">
+                  <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-secondary/20 backdrop-blur-sm">
                     <svg
-                      className="h-8 w-8 text-white"
+                      className="h-7 w-7 sm:h-8 sm:w-8 text-white"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -147,10 +147,10 @@ export default function LandingPage() {
                     </svg>
                   </div>
                 </div>
-                <h3 className="mb-3 text-xl font-semibold text-white">
+                <h3 className="mb-3 text-lg sm:text-xl font-semibold text-white">
                   Watch your focus grow
                 </h3>
-                <p className="text-white/80">
+                <p className="text-sm sm:text-base text-white/80">
                   Track your progress with daily history, streak counts, and visual summaries. 
                   Celebrate the journey.
                 </p>
@@ -160,13 +160,13 @@ export default function LandingPage() {
         </section>
 
         {/* Who It's For Section */}
-        <section className="px-4 py-16">
+        <section className="px-4 py-12 sm:py-16">
           <div className="mx-auto max-w-4xl">
-            <h2 className="mb-12 text-center text-3xl font-bold text-white md:text-4xl">
+            <h2 className="mb-8 sm:mb-12 text-center text-2xl sm:text-3xl font-bold text-white md:text-4xl">
               Who it&apos;s for
             </h2>
 
-            <div className="glass-card">
+            <div className="glass-card p-6 sm:p-8">
               <ul className="space-y-4">
                 <li className="flex items-start gap-4">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/20">
@@ -245,16 +245,16 @@ export default function LandingPage() {
         </section>
 
         {/* Final CTA Section */}
-        <section className="px-4 py-16">
+        <section className="px-4 py-12 sm:py-16">
           <div className="mx-auto max-w-3xl">
-            <div className="glass-card text-center">
-              <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl">
+            <div className="glass-card text-center p-6 sm:p-8">
+              <h2 className="mb-4 text-2xl sm:text-3xl font-bold text-white md:text-4xl">
                 Ready to build your focus?
               </h2>
-              <p className="mb-8 text-lg text-white/90">
+              <p className="mb-6 sm:mb-8 text-base sm:text-lg text-white/90">
                 Start your personalized training plan today.
               </p>
-              <Link href={ctaHref} className="btn-primary">
+              <Link href={ctaHref} className="btn-primary text-sm sm:text-base">
                 {ctaText}
               </Link>
             </div>
