@@ -4,7 +4,7 @@
   "description": "Gradually build your focus capacity with guided Pomodoro training",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
+  "background_color": "#667eea",
   "theme_color": "#667eea",
   "orientation": "portrait-primary",
   "icons": [

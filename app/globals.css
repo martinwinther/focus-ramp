@@ -9,11 +9,23 @@
     --glass-border-opacity: 0.18;
   }
 
+  html {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+
   body {
     @apply antialiased;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     background-attachment: fixed;
     min-height: 100vh;
+    min-height: -webkit-fill-available;
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
