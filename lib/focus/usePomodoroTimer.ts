@@ -77,7 +77,7 @@ export function usePomodoroTimer(
     if (initialIsRunning) {
       segmentStartTimeRef.current = new Date();
     }
-  }, []); // Only on mount
+  }, [initialSeconds, initialIsRunning]);
 
   // Calculate remaining seconds from timestamp (works even when device sleeps)
   const calculateRemainingFromTimestamp = useCallback((): number => {
